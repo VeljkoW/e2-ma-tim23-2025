@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "983424988133",
+    "project_id": "rpgapp-c45be",
+    "storage_bucket": "rpgapp-c45be.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:983424988133:android:9227633ef284b236dbf50c",
+        "android_client_info": {
+          "package_name": "com.example.rpgapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWztVZyW0ptW2M6wdQh5H0XN3aPTcnzJM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

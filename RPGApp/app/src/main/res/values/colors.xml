@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Primary RPG Colors -->
+    <color name="primary_color">#8B4513</color>
+    <color name="primary_dark">#5D2F0A</color>
+    <color name="accent_color">#FFD700</color>
+
+    <!-- Background Colors -->
+    <color name="background_color">#F5F5DC</color>
+    <color name="card_background">#FFFFFF</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#2C2C2C</color>
+    <color name="text_secondary">#666666</color>
+    <color name="text_hint">#999999</color>
+
+    <!-- Status Colors -->
+    <color name="success_color">#4CAF50</color>
+    <color name="error_color">#F44336</color>
+    <color name="warning_color">#FF9800</color>
+
+    <!-- Avatar Selection -->
+    <color name="avatar_selected">#FFD700</color>
+    <color name="avatar_unselected">#E0E0E0</color>
+</resources>

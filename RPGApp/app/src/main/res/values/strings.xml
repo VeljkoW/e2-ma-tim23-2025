@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">RPGApp</string>
+    <string name="email_address">Email address</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="no_account">No account?</string>
+    <string name="register">Register</string>
+    <string name="forgot_your_password">Forgot your password?</string>
+    <string name="login_to_continue_your_adventure">Login to continue your adventure</string>
+    <string name="welcome_back">Welcome back!</string>
+    <string name="rpg_habit_tracker">RPG Habit Tracker</string>
+    <string name="register_to_start_your_adventure">Register to start your adventure</string>
+    <string name="username">Username</string>
+    <string name="confirm_password">Confirm password</string>
+    <string name="choose_your_avatar">Choose your avatar:</string>
+    <string name="avatar_1">Avatar 1</string>
+    <string name="avatar_2">Avatar 2</string>
+    <string name="avatar_3">Avatar 3</string>
+    <string name="avatar_4">Avatar 4</string>
+    <string name="avatar_5">Avatar 5</string>
+    <string name="already_have_an_account">Already have an account?</string>
+    <string name="profile">Profile</string>
+    <string name="logout">Logout</string>
+    <string name="welcome_to_the_rpg_tracker_app">Welcome to the RPG tracker app!</string>
+    <string name="create_account">Create Account</string>
+    <string name="app_icon">App icon</string>
+</resources>
