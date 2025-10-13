@@ -38,6 +38,36 @@
             android:name=".MainActivity"
             android:exported="false" />
 
+        <!-- Mission Creation Activity -->
+        <activity
+            android:name=".ui.MissionCreationActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Missions List Activity -->
+        <activity
+            android:name=".ui.MissionsListActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
+        <!-- Mission Details Activity -->
+        <activity
+            android:name=".ui.MissionDetailsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
+        <!-- Mission Edit Activity -->
+        <activity
+            android:name=".ui.MissionEditActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Calendar Activity -->
+        <activity
+            android:name=".ui.CalendarActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
     </application>
 
 </manifest>

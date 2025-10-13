@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:layout_margin="2dp"
+    android:background="@drawable/calendar_day_background">
+
+    <!-- Day Number -->
+    <TextView
+        android:id="@+id/textViewDayNumber"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="15"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="4dp" />
+
+    <!-- Mission List for this day -->
+    <LinearLayout
+        android:id="@+id/layoutMissions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Missions will be added dynamically -->
+
+    </LinearLayout>
+
+    <!-- Empty state -->
+    <View
+        android:id="@+id/viewEmptyDay"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0"
+        android:visibility="gone" />
+
+</LinearLayout>
