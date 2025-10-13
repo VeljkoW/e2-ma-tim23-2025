@@ -146,6 +146,18 @@ public class CalendarActivity extends AppCompatActivity implements CalendarAdapt
         return dayMissions;
     }
 
+    @Override
+    public void onDayClick(CalendarDay day) {
+        // Handle day click - show all missions for the selected date
+        if (!day.getMissions().isEmpty()) {
+            // Navigate to missions list filtered by the selected date
+            Intent intent = new Intent(this, MissionsListActivity.class);
+            intent.putExtra("FILTER_DATE", day.getDate().getTime()); // Pass date as timestamp
+            intent.putExtra("DATE_DISPLAY", android.text.format.DateFormat.format("MMMM dd, yyyy", day.getDate()).toString());
+            startActivity(intent);
+        }
+    }
+
     private boolean isRepeatingMissionOnDate(Mission mission, Date targetDate) {
         if (mission.getCreateDateTime() == null || mission.getDueDateTime() == null ||
             mission.getRepeatInterval() == null || mission.getRepeatUnit() == null) {
@@ -199,15 +211,10 @@ public class CalendarActivity extends AppCompatActivity implements CalendarAdapt
     }
 
     @Override
-    public void onDayClick(CalendarDay day) {
-        // Handle day click - show all missions for the selected date
-        if (!day.getMissions().isEmpty()) {
-            // Navigate to missions list filtered by the selected date
-            Intent intent = new Intent(this, MissionsListActivity.class);
-            intent.putExtra("FILTER_DATE", day.getDate().getTime()); // Pass date as timestamp
-            intent.putExtra("DATE_DISPLAY", android.text.format.DateFormat.format("MMMM dd, yyyy", day.getDate()).toString());
-            startActivity(intent);
-        }
+    protected void onResume() {
+        super.onResume();
+        // Refresh mission data when returning from other activities
+        loadMissions();
     }
 
     @Override

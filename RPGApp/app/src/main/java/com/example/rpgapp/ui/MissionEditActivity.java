@@ -267,6 +267,7 @@ public class MissionEditActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 if (task.isSuccessful()) {
                     Toast.makeText(this, "Mission updated!", Toast.LENGTH_SHORT).show();
+                    setResult(RESULT_OK); // Indicate data was changed
                     finish();
                 } else {
                     Toast.makeText(this, "Failed to update mission", Toast.LENGTH_SHORT).show();

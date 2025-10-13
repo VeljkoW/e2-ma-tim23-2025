@@ -13,6 +13,54 @@
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         android:title="@string/my_missions" />
 
+    <!-- Filter Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/chipAllMissions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="All"
+            android:background="@drawable/status_chip_selector"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:layout_marginEnd="8dp"
+            android:textColor="@android:color/white"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:id="@+id/chipOneTimeMissions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="One-time"
+            android:background="@drawable/status_chip_selector"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:layout_marginEnd="8dp"
+            android:textColor="@android:color/white"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:id="@+id/chipRepeatingMissions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Repeating"
+            android:background="@drawable/status_chip_selector"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:textColor="@android:color/white"
+            android:clickable="true"
+            android:focusable="true" />
+
+    </LinearLayout>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewMissions"
         android:layout_width="match_parent"

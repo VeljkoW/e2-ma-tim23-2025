@@ -216,6 +216,32 @@
 
         </LinearLayout>
 
+        <!-- Finalization Date (only shown for completed/cancelled missions) -->
+        <LinearLayout
+            android:id="@+id/layoutFinalizationDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/textViewFinalizationLabel"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Completed:"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/textViewFinalizationDate"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Oct 13, 2025" />
+
+        </LinearLayout>
+
         <!-- Status Section with Clickable Chips - Only show if not past due -->
         <LinearLayout
             android:id="@+id/layoutStatusSection"

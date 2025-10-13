@@ -26,8 +26,17 @@ public class MissionsListActivity extends AppCompatActivity implements MissionAd
     private MissionAdapter missionAdapter;
     private MissionRepository missionRepository;
     private List<Mission> missionsList;
+    private List<Mission> allMissionsList; // Keep original list for filtering
     private Date filterDate = null;
     private String dateDisplayText = null;
+
+    // Filter chips
+    private TextView chipAllMissions, chipOneTimeMissions, chipRepeatingMissions;
+    private FilterType currentFilter = FilterType.ALL;
+
+    private enum FilterType {
+        ALL, ONE_TIME, REPEATING
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -56,9 +65,23 @@ public class MissionsListActivity extends AppCompatActivity implements MissionAd
 
         missionRepository = new MissionRepository();
         missionsList = new ArrayList<>();
+        allMissionsList = new ArrayList<>(); // Initialize the original list
 
         setupRecyclerView();
         loadUserMissions();
+
+        // Initialize filter chips
+        chipAllMissions = findViewById(R.id.chipAllMissions);
+        chipOneTimeMissions = findViewById(R.id.chipOneTimeMissions);
+        chipRepeatingMissions = findViewById(R.id.chipRepeatingMissions);
+
+        // Set chip click listeners
+        chipAllMissions.setOnClickListener(v -> setFilter(FilterType.ALL));
+        chipOneTimeMissions.setOnClickListener(v -> setFilter(FilterType.ONE_TIME));
+        chipRepeatingMissions.setOnClickListener(v -> setFilter(FilterType.REPEATING));
+
+        // Initialize filter chips visual state
+        updateFilterChips();
     }
 
     private void setupRecyclerView() {
@@ -72,11 +95,13 @@ public class MissionsListActivity extends AppCompatActivity implements MissionAd
         if (currentUser != null) {
             missionRepository.getAllMissions().addOnCompleteListener(task -> {
                 if (task.isSuccessful() && task.getResult() != null) {
+                    allMissionsList.clear(); // Clear the original list
                     missionsList.clear();
                     for (com.google.firebase.firestore.DocumentSnapshot doc : task.getResult().getDocuments()) {
                         Mission mission = doc.toObject(Mission.class);
                         if (mission != null && currentUser.getUid().equals(mission.getUserId())) {
                             mission.setId(doc.getId());
+                            allMissionsList.add(mission); // Add to the original list
 
                             // Apply date filter if set
                             if (filterDate == null || isMissionOnDate(mission, filterDate)) {
@@ -170,6 +195,77 @@ public class MissionsListActivity extends AppCompatActivity implements MissionAd
         } else {
             recyclerViewMissions.setVisibility(View.VISIBLE);
             textViewEmptyState.setVisibility(View.GONE);
+        }
+    }
+
+    private void setFilter(FilterType filterType) {
+        currentFilter = filterType;
+        updateFilterChips();
+
+        missionsList.clear();
+
+        // Get the base list to filter from
+        List<Mission> baseList = filterDate != null ? getDateFilteredMissions() : allMissionsList;
+
+        switch (filterType) {
+            case ALL:
+                // No frequency filter, show all missions from base list
+                missionsList.addAll(baseList);
+                break;
+            case ONE_TIME:
+                // Filter for one-time missions
+                for (Mission mission : baseList) {
+                    if (mission.getFrequency() == Mission.FrequencyType.ONCE) {
+                        missionsList.add(mission);
+                    }
+                }
+                break;
+            case REPEATING:
+                // Filter for repeating missions
+                for (Mission mission : baseList) {
+                    if (mission.getFrequency() == Mission.FrequencyType.REPEATING) {
+                        missionsList.add(mission);
+                    }
+                }
+                break;
+        }
+
+        missionAdapter.notifyDataSetChanged();
+        updateEmptyState();
+    }
+
+    private List<Mission> getDateFilteredMissions() {
+        List<Mission> dateFiltered = new ArrayList<>();
+        for (Mission mission : allMissionsList) {
+            if (isMissionOnDate(mission, filterDate)) {
+                dateFiltered.add(mission);
+            }
+        }
+        return dateFiltered;
+    }
+
+    private void updateFilterChips() {
+        // Reset all chips
+        chipAllMissions.setSelected(false);
+        chipOneTimeMissions.setSelected(false);
+        chipRepeatingMissions.setSelected(false);
+
+        // Set colors based on selection
+        chipAllMissions.setBackgroundColor(currentFilter == FilterType.ALL ? 0xFF4CAF50 : 0x80000000);
+        chipOneTimeMissions.setBackgroundColor(currentFilter == FilterType.ONE_TIME ? 0xFF4CAF50 : 0x80000000);
+        chipRepeatingMissions.setBackgroundColor(currentFilter == FilterType.REPEATING ? 0xFF4CAF50 : 0x80000000);
+
+        // Mark selected chip
+        switch (currentFilter) {
+            case ALL:
+                chipAllMissions.setSelected(true);
+                break;
+            case ONE_TIME:
+                chipOneTimeMissions.setSelected(true);
+                break;
+            case REPEATING:
+                chipRepeatingMissions.setSelected(true);
+                break;
         }
     }
 

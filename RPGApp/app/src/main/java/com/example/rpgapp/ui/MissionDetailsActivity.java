@@ -9,7 +9,11 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.Mission;
+import com.example.rpgapp.model.User;
 import com.example.rpgapp.repository.MissionRepository;
+import com.example.rpgapp.repository.UserRepository;
+import com.example.rpgapp.service.AuthService;
+import com.example.rpgapp.callback.AuthCallback;
 import com.google.android.material.appbar.MaterialToolbar;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -18,8 +22,8 @@ import java.util.Locale;
 public class MissionDetailsActivity extends AppCompatActivity {
     private TextView textViewMissionName, textViewMissionDescription, textViewCategory, textViewDifficulty;
     private TextView textViewImportance, textViewFrequency, textViewRepeatInfo;
-    private TextView textViewTotalXP, textViewCreatedDate, textViewDueDate;
-    private LinearLayout layoutRepeatInfo, layoutStatusSection;
+    private TextView textViewTotalXP, textViewCreatedDate, textViewDueDate, textViewFinalizationDate, textViewFinalizationLabel;
+    private LinearLayout layoutRepeatInfo, layoutStatusSection, layoutFinalizationDate;
     private TextView chipActive, chipCompleted, chipPaused, chipCancelled;
     private Button buttonUpdateMission, buttonDeleteMission;
 
@@ -27,6 +31,10 @@ public class MissionDetailsActivity extends AppCompatActivity {
     private Mission currentMission;
     private String missionId;
     private Mission.Status selectedStatus;
+
+    // User repository and auth service for XP awarding
+    private UserRepository userRepository;
+    private AuthService authService;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -41,6 +49,9 @@ public class MissionDetailsActivity extends AppCompatActivity {
         setupListeners();
 
         missionRepository = new MissionRepository();
+        userRepository = new UserRepository(this);
+        authService = new AuthService(this);
+
         missionId = getIntent().getStringExtra("MISSION_ID");
 
         if (missionId != null) {
@@ -61,8 +72,11 @@ public class MissionDetailsActivity extends AppCompatActivity {
         textViewTotalXP = findViewById(R.id.textViewTotalXP);
         textViewCreatedDate = findViewById(R.id.textViewCreatedDate);
         textViewDueDate = findViewById(R.id.textViewDueDate);
+        textViewFinalizationDate = findViewById(R.id.textViewFinalizationDate);
+        textViewFinalizationLabel = findViewById(R.id.textViewFinalizationLabel);
         layoutRepeatInfo = findViewById(R.id.layoutRepeatInfo);
         layoutStatusSection = findViewById(R.id.layoutStatusSection);
+        layoutFinalizationDate = findViewById(R.id.layoutFinalizationDate);
 
         // Status chips
         chipActive = findViewById(R.id.chipActive);
@@ -85,9 +99,72 @@ public class MissionDetailsActivity extends AppCompatActivity {
     }
 
     private void selectStatus(Mission.Status status) {
+        // Check if current mission is in a final state
+        if (isFinalState(currentMission.getStatus())) {
+            Toast.makeText(this, "Cannot change status of completed or cancelled missions", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Handle paused state transitions
+        if (currentMission.getStatus() == Mission.Status.PAUSED && status == Mission.Status.ACTIVE) {
+            handleUnpauseLogic();
+            return;
+        }
+
         selectedStatus = status;
         updateStatusChips();
         changeStatusToSelected();
+    }
+
+    private boolean isFinalState(Mission.Status status) {
+        return status == Mission.Status.COMPLETED || status == Mission.Status.CANCELLED;
+    }
+
+    private void handleUnpauseLogic() {
+        // Check if mission is past due
+        if (isPastDue()) {
+            // Show dialog to choose between completed or cancelled - no option to reactivate
+            showPostDueUnpauseDialog();
+        } else {
+            // Only allow reactivation if not past due
+            selectedStatus = Mission.Status.ACTIVE;
+            updateStatusChips();
+            changeStatusToSelected();
+        }
+    }
+
+    private boolean isPastDue() {
+        if (currentMission.getDueDateTime() == null) {
+            return false;
+        }
+
+        // Get start of today (00:00:00)
+        Calendar startOfToday = Calendar.getInstance();
+        startOfToday.set(Calendar.HOUR_OF_DAY, 0);
+        startOfToday.set(Calendar.MINUTE, 0);
+        startOfToday.set(Calendar.SECOND, 0);
+        startOfToday.set(Calendar.MILLISECOND, 0);
+
+        // Mission is past due if its due date is before the start of today
+        return currentMission.getDueDateTime().before(startOfToday.getTime());
+    }
+
+    private void showPostDueUnpauseDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Mission Past Due")
+                .setMessage("This mission is past its due date. You must either mark it as completed or cancelled - it cannot be reactivated.")
+                .setPositiveButton("Mark Completed", (dialog, which) -> {
+                    selectedStatus = Mission.Status.COMPLETED;
+                    updateStatusChips();
+                    changeStatusToSelected();
+                })
+                .setNegativeButton("Mark Cancelled", (dialog, which) -> {
+                    selectedStatus = Mission.Status.CANCELLED;
+                    updateStatusChips();
+                    changeStatusToSelected();
+                })
+                .setCancelable(false) // Force user to make a choice
+                .show();
     }
 
     private void updateStatusChips() {
@@ -96,6 +173,43 @@ public class MissionDetailsActivity extends AppCompatActivity {
         chipCompleted.setSelected(false);
         chipPaused.setSelected(false);
         chipCancelled.setSelected(false);
+
+        // Hide status chips and buttons for final states
+        if (isFinalState(currentMission.getStatus())) {
+            // Apply final state visual styling
+            layoutStatusSection.setAlpha(0.6f); // Make it look disabled
+
+            // Disable all chips
+            chipActive.setEnabled(false);
+            chipCompleted.setEnabled(false);
+            chipPaused.setEnabled(false);
+            chipCancelled.setEnabled(false);
+
+            // Hide action buttons
+            buttonUpdateMission.setVisibility(View.GONE);
+            buttonDeleteMission.setVisibility(View.GONE);
+        } else {
+            // Enable status changes for non-final states
+            layoutStatusSection.setAlpha(1.0f);
+
+            // For paused missions, only show active option
+            if (currentMission.getStatus() == Mission.Status.PAUSED) {
+                chipActive.setEnabled(true);
+                chipCompleted.setEnabled(false);
+                chipPaused.setEnabled(false);
+                chipCancelled.setEnabled(false);
+            } else {
+                // For active missions, show all options
+                chipActive.setEnabled(true);
+                chipCompleted.setEnabled(true);
+                chipPaused.setEnabled(true);
+                chipCancelled.setEnabled(true);
+            }
+
+            // Keep action buttons visible
+            buttonUpdateMission.setVisibility(View.VISIBLE);
+            buttonDeleteMission.setVisibility(View.VISIBLE);
+        }
 
         // Set colors based on status
         chipActive.setBackgroundColor(selectedStatus == Mission.Status.ACTIVE ? 0xFF4CAF50 : 0x80000000);
@@ -124,23 +238,36 @@ public class MissionDetailsActivity extends AppCompatActivity {
         if (selectedStatus != null && !selectedStatus.equals(currentMission.getStatus())) {
             switch (selectedStatus) {
                 case COMPLETED:
-                    missionRepository.completeMission(missionId);
-                    break;
-                case PAUSED:
-                    // For PAUSED, update directly
+                    currentMission.setFinalizationDateTime(new java.util.Date());
                     currentMission.setStatus(selectedStatus);
                     missionRepository.updateMission(missionId, currentMission);
+                    awardXpToUser(currentMission.getTotalXP());
+                    setResult(RESULT_OK);
+                    Toast.makeText(this, "Mission completed!", Toast.LENGTH_SHORT).show();
+                    break;
+                case PAUSED:
+                    currentMission.setStatus(selectedStatus);
+                    missionRepository.updateMission(missionId, currentMission);
+                    setResult(RESULT_OK);
+                    Toast.makeText(this, "Mission paused", Toast.LENGTH_SHORT).show();
                     break;
                 case CANCELLED:
-                    missionRepository.cancelMission(missionId);
+                    currentMission.setFinalizationDateTime(new java.util.Date());
+                    currentMission.setStatus(selectedStatus);
+                    missionRepository.updateMission(missionId, currentMission);
+                    setResult(RESULT_OK);
+                    Toast.makeText(this, "Mission cancelled", Toast.LENGTH_SHORT).show();
                     break;
                 case ACTIVE:
-                    missionRepository.activateMission(missionId);
+                    currentMission.setStatus(selectedStatus);
+                    missionRepository.updateMission(missionId, currentMission);
+                    setResult(RESULT_OK);
+                    Toast.makeText(this, "Mission reactivated", Toast.LENGTH_SHORT).show();
                     break;
             }
 
-            currentMission.setStatus(selectedStatus);
-            Toast.makeText(this, "Status updated to " + selectedStatus.toString(), Toast.LENGTH_SHORT).show();
+            // Refresh the UI to reflect the new state
+            populateViews();
         }
     }
 
@@ -198,34 +325,51 @@ public class MissionDetailsActivity extends AppCompatActivity {
             textViewDueDate.setText(dateFormat.format(currentMission.getDueDateTime()));
         }
 
-        // Check if mission is past due
-        boolean isPastDue = false;
-        if (currentMission.getDueDateTime() != null) {
-            Calendar today = Calendar.getInstance();
-            today.set(Calendar.HOUR_OF_DAY, 23);
-            today.set(Calendar.MINUTE, 59);
-            today.set(Calendar.SECOND, 59);
-            isPastDue = currentMission.getDueDateTime().before(today.getTime());
+        // Handle finalization date display - simplified approach
+        if (currentMission.getFinalizationDateTime() != null && isFinalState(currentMission.getStatus())) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault());
+            textViewFinalizationDate.setText(dateFormat.format(currentMission.getFinalizationDateTime()));
+            layoutFinalizationDate.setVisibility(View.VISIBLE);
+        } else {
+            layoutFinalizationDate.setVisibility(View.GONE);
         }
 
-        // Hide status section for past-due missions
-        if (isPastDue) {
-            layoutStatusSection.setVisibility(View.GONE);
+        // Set current status and update UI accordingly
+        selectedStatus = currentMission.getStatus() != null ? currentMission.getStatus() : Mission.Status.ACTIVE;
+
+        // Always show status section but handle final states appropriately
+        layoutStatusSection.setVisibility(View.VISIBLE);
+        updateStatusChips();
+
+        // Set finalization label text based on mission status
+        if (currentMission.getStatus() == Mission.Status.COMPLETED) {
+            textViewFinalizationLabel.setText("Completed on:");
+        } else if (currentMission.getStatus() == Mission.Status.CANCELLED) {
+            textViewFinalizationLabel.setText("Cancelled on:");
         } else {
-            layoutStatusSection.setVisibility(View.VISIBLE);
-            // Set current status
-            selectedStatus = currentMission.getStatus() != null ? currentMission.getStatus() : Mission.Status.ACTIVE;
-            updateStatusChips();
+            textViewFinalizationLabel.setText("");
         }
     }
 
     private void updateMission() {
+        // Check if mission is past due and prevent updates
+        if (isPastDue() && !isFinalState(currentMission.getStatus())) {
+            Toast.makeText(this, "Cannot update a mission that is past its due date. Please complete or cancel it first.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         Intent intent = new Intent(this, MissionEditActivity.class);
         intent.putExtra("MISSION_ID", missionId);
         startActivity(intent);
     }
 
     private void confirmDeleteMission() {
+        // Check if mission is past due and prevent deletion of non-final missions
+        if (isPastDue() && !isFinalState(currentMission.getStatus())) {
+            Toast.makeText(this, "Cannot delete a mission that is past its due date. Please complete or cancel it first.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         new AlertDialog.Builder(this)
                 .setTitle("Delete Mission")
                 .setMessage("Are you sure you want to delete this mission? This action cannot be undone.")
@@ -239,11 +383,57 @@ public class MissionDetailsActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 if (task.isSuccessful()) {
                     Toast.makeText(this, "Mission deleted", Toast.LENGTH_SHORT).show();
+                    setResult(RESULT_OK); // Indicate data was changed
                     finish();
                 } else {
                     Toast.makeText(this, "Failed to delete mission", Toast.LENGTH_SHORT).show();
                 }
             });
+        });
+    }
+
+    private void awardXpToUser(int xpAmount) {
+        android.util.Log.d("MissionDetails", "Starting XP award process for " + xpAmount + " XP");
+
+        // Get the current user
+        authService.getCurrentUser(new AuthCallback<User>() {
+            @Override
+            public void onResult(User user) {
+                if (user != null) {
+                    android.util.Log.d("MissionDetails", "User retrieved successfully: " + user.getUsername() + " (ID: " + user.getId() + ")");
+
+                    // Try primary Firebase method first
+                    userRepository.awardXpToUser(user.getId(), xpAmount).addOnCompleteListener(task -> {
+                        runOnUiThread(() -> {
+                            if (task.isSuccessful()) {
+                                android.util.Log.d("MissionDetails", "XP awarded successfully via Firebase!");
+                                Toast.makeText(MissionDetailsActivity.this, "Mission completed! Awarded " + xpAmount + " XP!", Toast.LENGTH_LONG).show();
+                            } else {
+                                // Firebase failed, try fallback method
+                                android.util.Log.w("MissionDetails", "Firebase XP award failed, trying fallback method");
+                                userRepository.awardXpToUserFallback(user.getId(), xpAmount).addOnCompleteListener(fallbackTask -> {
+                                    runOnUiThread(() -> {
+                                        if (fallbackTask.isSuccessful()) {
+                                            android.util.Log.d("MissionDetails", "XP awarded successfully via fallback method!");
+                                            Toast.makeText(MissionDetailsActivity.this, "Mission completed! Awarded " + xpAmount + " XP! (Local save)", Toast.LENGTH_LONG).show();
+                                        } else {
+                                            Exception exception = fallbackTask.getException();
+                                            String errorMsg = exception != null ? exception.getMessage() : "Unknown error";
+                                            android.util.Log.e("MissionDetails", "Both Firebase and fallback methods failed: " + errorMsg);
+                                            Toast.makeText(MissionDetailsActivity.this, "Mission completed, but failed to award XP: " + errorMsg, Toast.LENGTH_LONG).show();
+                                        }
+                                    });
+                                });
+                            }
+                        });
+                    });
+                } else {
+                    android.util.Log.e("MissionDetails", "User is null - cannot award XP");
+                    runOnUiThread(() -> {
+                        Toast.makeText(MissionDetailsActivity.this, "Error: Could not find user to award XP", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
         });
     }
 
