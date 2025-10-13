@@ -11,7 +11,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.rpgapp.R;
 import com.example.rpgapp.adapter.MissionAdapter;
 import com.example.rpgapp.model.Mission;
+import com.example.rpgapp.model.Category;
 import com.example.rpgapp.repository.MissionRepository;
+import com.example.rpgapp.repository.CategoryRepository;
+import com.example.rpgapp.service.AuthService;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -25,6 +28,8 @@ public class MissionsListActivity extends AppCompatActivity implements MissionAd
     private TextView textViewEmptyState;
     private MissionAdapter missionAdapter;
     private MissionRepository missionRepository;
+    private CategoryRepository categoryRepository;
+    private AuthService authService;
     private List<Mission> missionsList;
     private List<Mission> allMissionsList; // Keep original list for filtering
     private Date filterDate = null;
@@ -64,11 +69,13 @@ public class MissionsListActivity extends AppCompatActivity implements MissionAd
         textViewEmptyState = findViewById(R.id.textViewEmptyState);
 
         missionRepository = new MissionRepository();
+        categoryRepository = new CategoryRepository();
+        authService = new AuthService(this);
         missionsList = new ArrayList<>();
         allMissionsList = new ArrayList<>(); // Initialize the original list
 
         setupRecyclerView();
-        loadUserMissions();
+        loadCategoriesAndMissions();
 
         // Initialize filter chips
         chipAllMissions = findViewById(R.id.chipAllMissions);
@@ -88,6 +95,35 @@ public class MissionsListActivity extends AppCompatActivity implements MissionAd
         missionAdapter = new MissionAdapter(missionsList, this);
         recyclerViewMissions.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewMissions.setAdapter(missionAdapter);
+    }
+
+    private void loadCategoriesAndMissions() {
+        FirebaseUser firebaseUser = authService.getCurrentFirebaseUser();
+        if (firebaseUser == null) {
+            return;
+        }
+
+        // First load categories, then missions
+        categoryRepository.getCategoriesByUserId(firebaseUser.getUid(), new CategoryRepository.CategoryCallback<List<Category>>() {
+            @Override
+            public void onResult(List<Category> categories) {
+                runOnUiThread(() -> {
+                    // Set category cache in the adapter
+                    missionAdapter.setCategoryCache(categories);
+
+                    // Now load missions
+                    loadUserMissions();
+                });
+            }
+
+            @Override
+            public void onError(Exception e) {
+                runOnUiThread(() -> {
+                    // Still try to load missions even if categories fail
+                    loadUserMissions();
+                });
+            }
+        });
     }
 
     private void loadUserMissions() {

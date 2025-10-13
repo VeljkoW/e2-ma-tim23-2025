@@ -8,13 +8,15 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.Mission;
-import java.text.SimpleDateFormat;
+import com.example.rpgapp.model.Category;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
+import java.util.HashMap;
 
 public class MissionAdapter extends RecyclerView.Adapter<MissionAdapter.MissionViewHolder> {
     private List<Mission> missions;
     private OnMissionClickListener listener;
+    private Map<String, Category> categoryCache;
 
     public interface OnMissionClickListener {
         void onMissionClick(Mission mission);
@@ -23,6 +25,18 @@ public class MissionAdapter extends RecyclerView.Adapter<MissionAdapter.MissionV
     public MissionAdapter(List<Mission> missions, OnMissionClickListener listener) {
         this.missions = missions;
         this.listener = listener;
+        this.categoryCache = new HashMap<>();
+    }
+
+    // Method to set categories for caching (call this from the activity/fragment)
+    public void setCategoryCache(List<Category> categories) {
+        categoryCache.clear();
+        for (Category category : categories) {
+            if (category.getId() != null) {
+                categoryCache.put(category.getId(), category);
+            }
+        }
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -35,7 +49,7 @@ public class MissionAdapter extends RecyclerView.Adapter<MissionAdapter.MissionV
     @Override
     public void onBindViewHolder(@NonNull MissionViewHolder holder, int position) {
         Mission mission = missions.get(position);
-        holder.bind(mission, listener);
+        holder.bind(mission, listener, this);
     }
 
     @Override
@@ -43,7 +57,7 @@ public class MissionAdapter extends RecyclerView.Adapter<MissionAdapter.MissionV
         return missions.size();
     }
 
-    static class MissionViewHolder extends RecyclerView.ViewHolder {
+    class MissionViewHolder extends RecyclerView.ViewHolder {
         private TextView textViewMissionName;
         private TextView textViewMissionCategory;
         private TextView textViewMissionDifficulty;
@@ -61,17 +75,20 @@ public class MissionAdapter extends RecyclerView.Adapter<MissionAdapter.MissionV
             viewCategoryColor = itemView.findViewById(R.id.viewCategoryColor);
         }
 
-        public void bind(Mission mission, OnMissionClickListener listener) {
+        public void bind(Mission mission, OnMissionClickListener listener, MissionAdapter adapter) {
             textViewMissionName.setText(mission.getName());
-            textViewMissionCategory.setText(mission.getCategory() != null ? mission.getCategory().toString() : "");
+
+            // Get category name from cache using categoryId
+            String categoryName = getCategoryName(mission.getCategoryId(), adapter);
+            textViewMissionCategory.setText(categoryName);
+
             textViewMissionDifficulty.setText(mission.getDifficulty() != null ? mission.getDifficulty().toString() : "");
             textViewMissionStatus.setText(mission.getStatus() != null ? mission.getStatus().toString() : "");
             textViewMissionXP.setText(mission.getTotalXP() + " XP");
 
-            // Set category color
-            if (mission.getCategory() != null) {
-                viewCategoryColor.setBackgroundColor(mission.getCategory().color);
-            }
+            // Set category color using categoryId
+            int categoryColor = getCategoryColor(mission.getCategoryId(), adapter);
+            viewCategoryColor.setBackgroundColor(categoryColor);
 
             // Set status background color
             if (mission.getStatus() != null) {
@@ -104,6 +121,22 @@ public class MissionAdapter extends RecyclerView.Adapter<MissionAdapter.MissionV
                     listener.onMissionClick(mission);
                 }
             });
+        }
+
+        private String getCategoryName(String categoryId, MissionAdapter adapter) {
+            if (categoryId != null && adapter.categoryCache.containsKey(categoryId)) {
+                Category category = adapter.categoryCache.get(categoryId);
+                return category.getName();
+            }
+            return "No Category"; // Default text if category not found
+        }
+
+        private int getCategoryColor(String categoryId, MissionAdapter adapter) {
+            if (categoryId != null && adapter.categoryCache.containsKey(categoryId)) {
+                Category category = adapter.categoryCache.get(categoryId);
+                return category.getColor();
+            }
+            return 0xFF9E9E9E; // Default grey color if category not found
         }
     }
 }

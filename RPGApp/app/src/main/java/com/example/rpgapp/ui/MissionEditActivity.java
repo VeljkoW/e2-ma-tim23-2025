@@ -8,11 +8,17 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.Mission;
+import com.example.rpgapp.model.Category;
 import com.example.rpgapp.repository.MissionRepository;
+import com.example.rpgapp.repository.CategoryRepository;
+import com.example.rpgapp.service.AuthService;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
 
 public class MissionEditActivity extends AppCompatActivity {
     private EditText editTextName, editTextDescription, editTextRepeatInterval;
@@ -21,9 +27,13 @@ public class MissionEditActivity extends AppCompatActivity {
     private Button buttonUpdateMission, buttonSelectDueDate;
 
     private MissionRepository missionRepository;
+    private CategoryRepository categoryRepository;
+    private AuthService authService;
     private Mission currentMission;
     private String missionId;
     private Date selectedDueDate;
+    private List<Category> categories;
+    private ArrayAdapter<Category> categoryAdapter;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -41,10 +51,13 @@ public class MissionEditActivity extends AppCompatActivity {
         setupSpinners();
 
         missionRepository = new MissionRepository();
+        categoryRepository = new CategoryRepository();
+        authService = new AuthService(this);
+
         missionId = getIntent().getStringExtra("MISSION_ID");
 
         if (missionId != null) {
-            loadMissionForEdit();
+            loadCategories();
         } else {
             finish();
         }
@@ -76,9 +89,7 @@ public class MissionEditActivity extends AppCompatActivity {
         repeatUnitAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerRepeatUnit.setAdapter(repeatUnitAdapter);
 
-        ArrayAdapter<Mission.Category> categoryAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, Mission.Category.values());
-        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerCategory.setAdapter(categoryAdapter);
+        // Categories will be loaded dynamically in loadCategories()
 
         ArrayAdapter<Mission.Difficulty> difficultyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, Mission.Difficulty.values());
         difficultyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -131,6 +142,44 @@ public class MissionEditActivity extends AppCompatActivity {
         datePickerDialog.show();
     }
 
+    private void loadCategories() {
+        FirebaseUser firebaseUser = authService.getCurrentFirebaseUser();
+        if (firebaseUser == null) {
+            Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        categoryRepository.getCategoriesByUserId(firebaseUser.getUid(), new CategoryRepository.CategoryCallback<List<Category>>() {
+            @Override
+            public void onResult(List<Category> result) {
+                runOnUiThread(() -> {
+                    categories = result;
+                    if (categories.isEmpty()) {
+                        categories = new ArrayList<>();
+                        Category noCategory = new Category();
+                        noCategory.setName("No categories available");
+                        categories.add(noCategory);
+                    }
+
+                    categoryAdapter = new ArrayAdapter<>(MissionEditActivity.this, android.R.layout.simple_spinner_item, categories);
+                    categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    spinnerCategory.setAdapter(categoryAdapter);
+
+                    // Now load the mission data
+                    loadMissionForEdit();
+                });
+            }
+
+            @Override
+            public void onError(Exception e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(MissionEditActivity.this, "Error loading categories: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
     private void loadMissionForEdit() {
         missionRepository.getMissionById(missionId).addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
@@ -161,9 +210,10 @@ public class MissionEditActivity extends AppCompatActivity {
             }
         }
 
-        if (currentMission.getCategory() != null) {
-            for (int i = 0; i < Mission.Category.values().length; i++) {
-                if (Mission.Category.values()[i] == currentMission.getCategory()) {
+        // Find and set category by categoryId
+        if (currentMission.getCategoryId() != null) {
+            for (int i = 0; i < categories.size(); i++) {
+                if (categories.get(i).getId() != null && categories.get(i).getId().equals(currentMission.getCategoryId())) {
                     spinnerCategory.setSelection(i);
                     break;
                 }
@@ -227,7 +277,13 @@ public class MissionEditActivity extends AppCompatActivity {
             repeatUnit = (Mission.RepeatUnit) spinnerRepeatUnit.getSelectedItem();
         }
 
-        Mission.Category category = (Mission.Category) spinnerCategory.getSelectedItem();
+        // Get selected category
+        Category selectedCategory = (Category) spinnerCategory.getSelectedItem();
+        String categoryId = null;
+        if (selectedCategory != null && selectedCategory.getId() != null) {
+            categoryId = selectedCategory.getId();
+        }
+
         Mission.Difficulty difficulty = (Mission.Difficulty) spinnerDifficulty.getSelectedItem();
         Mission.Importance importance = (Mission.Importance) spinnerImportance.getSelectedItem();
 
@@ -246,13 +302,18 @@ public class MissionEditActivity extends AppCompatActivity {
             return;
         }
 
+        if (categoryId == null) {
+            Toast.makeText(this, "Please select a valid category", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // Update current mission fields
         currentMission.setName(name);
         currentMission.setDescription(description.isEmpty() ? null : description);
         currentMission.setFrequency(frequency);
         currentMission.setRepeatInterval(repeatInterval);
         currentMission.setRepeatUnit(repeatUnit);
-        currentMission.setCategory(category);
+        currentMission.setCategoryId(categoryId); // Use categoryId instead of category object
         currentMission.setDifficulty(difficulty);
         currentMission.setImportance(importance);
         currentMission.setDueDateTime(selectedDueDate);
@@ -278,7 +339,7 @@ public class MissionEditActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        onBackPressed();
+        getOnBackPressedDispatcher().onBackPressed();
         return true;
     }
 }

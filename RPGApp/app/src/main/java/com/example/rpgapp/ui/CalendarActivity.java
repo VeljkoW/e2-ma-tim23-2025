@@ -12,7 +12,10 @@ import com.example.rpgapp.R;
 import com.example.rpgapp.adapter.CalendarAdapter;
 import com.example.rpgapp.model.CalendarDay;
 import com.example.rpgapp.model.Mission;
+import com.example.rpgapp.model.Category;
 import com.example.rpgapp.repository.MissionRepository;
+import com.example.rpgapp.repository.CategoryRepository;
+import com.example.rpgapp.service.AuthService;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -26,6 +29,8 @@ public class CalendarActivity extends AppCompatActivity implements CalendarAdapt
     private RecyclerView recyclerViewCalendar;
     private CalendarAdapter calendarAdapter;
     private MissionRepository missionRepository;
+    private CategoryRepository categoryRepository;
+    private AuthService authService;
 
     private Calendar currentCalendar;
     private List<Mission> allMissions;
@@ -42,7 +47,7 @@ public class CalendarActivity extends AppCompatActivity implements CalendarAdapt
 
         initViews();
         setupCalendar();
-        loadMissions();
+        loadCategoriesAndMissions();
     }
 
     private void initViews() {
@@ -64,7 +69,38 @@ public class CalendarActivity extends AppCompatActivity implements CalendarAdapt
         recyclerViewCalendar.setAdapter(calendarAdapter);
 
         missionRepository = new MissionRepository();
+        categoryRepository = new CategoryRepository();
+        authService = new AuthService(this);
         allMissions = new ArrayList<>();
+    }
+
+    private void loadCategoriesAndMissions() {
+        FirebaseUser firebaseUser = authService.getCurrentFirebaseUser();
+        if (firebaseUser == null) {
+            return;
+        }
+
+        // First load categories, then missions
+        categoryRepository.getCategoriesByUserId(firebaseUser.getUid(), new CategoryRepository.CategoryCallback<List<Category>>() {
+            @Override
+            public void onResult(List<Category> categories) {
+                runOnUiThread(() -> {
+                    // Set category cache in the adapter
+                    calendarAdapter.setCategoryCache(categories);
+
+                    // Now load missions
+                    loadMissions();
+                });
+            }
+
+            @Override
+            public void onError(Exception e) {
+                runOnUiThread(() -> {
+                    // Still try to load missions even if categories fail
+                    loadMissions();
+                });
+            }
+        });
     }
 
     private void loadMissions() {
@@ -118,6 +154,10 @@ public class CalendarActivity extends AppCompatActivity implements CalendarAdapt
             CalendarDay calendarDay = new CalendarDay(day, dayDate, dayMissions);
             calendarDays.add(calendarDay);
         }
+    }
+
+    private void updateCategoryCache(List<Category> categories) {
+        calendarAdapter.setCategoryCache(categories);
     }
 
     private List<Mission> getMissionsForDay(Date date) {

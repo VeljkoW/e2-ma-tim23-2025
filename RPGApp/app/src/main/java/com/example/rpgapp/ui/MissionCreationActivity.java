@@ -8,13 +8,17 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.Mission;
+import com.example.rpgapp.model.Category;
 import com.example.rpgapp.repository.MissionRepository;
+import com.example.rpgapp.repository.CategoryRepository;
 import com.example.rpgapp.service.AuthService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
 
 public class MissionCreationActivity extends AppCompatActivity {
     private EditText editTextName, editTextDescription, editTextRepeatInterval;
@@ -22,8 +26,11 @@ public class MissionCreationActivity extends AppCompatActivity {
     private LinearLayout layoutRepeat;
     private Button buttonCreateMission, buttonSelectDueDate;
     private MissionRepository missionRepository;
+    private CategoryRepository categoryRepository;
     private AuthService authService;
     private Date selectedDueDate;
+    private List<Category> categories;
+    private ArrayAdapter<Category> categoryAdapter;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -43,7 +50,14 @@ public class MissionCreationActivity extends AppCompatActivity {
         buttonSelectDueDate = findViewById(R.id.buttonSelectDueDate);
 
         missionRepository = new MissionRepository(); // Adjust if using DI or singleton
+        categoryRepository = new CategoryRepository();
         authService = new AuthService(this);
+
+        // Setup action bar
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Create Mission");
+        }
 
         // Populate spinners
         ArrayAdapter<Mission.FrequencyType> frequencyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, Mission.FrequencyType.values());
@@ -54,9 +68,8 @@ public class MissionCreationActivity extends AppCompatActivity {
         repeatUnitAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerRepeatUnit.setAdapter(repeatUnitAdapter);
 
-        ArrayAdapter<Mission.Category> categoryAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, Mission.Category.values());
-        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerCategory.setAdapter(categoryAdapter);
+        // Load categories dynamically from Firebase
+        loadCategories();
 
         ArrayAdapter<Mission.Difficulty> difficultyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, Mission.Difficulty.values());
         difficultyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -78,6 +91,46 @@ public class MissionCreationActivity extends AppCompatActivity {
 
         buttonSelectDueDate.setOnClickListener(v -> showDatePicker());
         buttonCreateMission.setOnClickListener(v -> createMission());
+    }
+
+    private void loadCategories() {
+        FirebaseUser firebaseUser = authService.getCurrentFirebaseUser();
+        if (firebaseUser == null) {
+            Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        categoryRepository.getCategoriesByUserId(firebaseUser.getUid(), new CategoryRepository.CategoryCallback<List<Category>>() {
+            @Override
+            public void onResult(List<Category> result) {
+                runOnUiThread(() -> {
+                    categories = result;
+                    if (categories.isEmpty()) {
+                        // Add a placeholder item if no categories exist
+                        categories = new ArrayList<>();
+                        Category noCategory = new Category();
+                        noCategory.setName("No categories available - Create one first");
+                        categories.add(noCategory);
+                        buttonCreateMission.setEnabled(false);
+                        Toast.makeText(MissionCreationActivity.this, "Please create a category first", Toast.LENGTH_LONG).show();
+                    } else {
+                        buttonCreateMission.setEnabled(true);
+                    }
+
+                    categoryAdapter = new ArrayAdapter<>(MissionCreationActivity.this, android.R.layout.simple_spinner_item, categories);
+                    categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    spinnerCategory.setAdapter(categoryAdapter);
+                });
+            }
+
+            @Override
+            public void onError(Exception e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(MissionCreationActivity.this, "Error loading categories: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
     }
 
     private void showDatePicker() {
@@ -118,7 +171,14 @@ public class MissionCreationActivity extends AppCompatActivity {
             }
             repeatUnit = (Mission.RepeatUnit) spinnerRepeatUnit.getSelectedItem();
         }
-        Mission.Category category = (Mission.Category) spinnerCategory.getSelectedItem();
+
+        // Get selected category
+        Category selectedCategory = (Category) spinnerCategory.getSelectedItem();
+        String categoryId = null;
+        if (selectedCategory != null && selectedCategory.getId() != null) {
+            categoryId = selectedCategory.getId();
+        }
+
         Mission.Difficulty difficulty = (Mission.Difficulty) spinnerDifficulty.getSelectedItem();
         Mission.Importance importance = (Mission.Importance) spinnerImportance.getSelectedItem();
         String userId = getCurrentUserId();
@@ -139,6 +199,10 @@ public class MissionCreationActivity extends AppCompatActivity {
             Toast.makeText(this, "Please select a due date", Toast.LENGTH_SHORT).show();
             return;
         }
+        if (categoryId == null) {
+            Toast.makeText(this, "Please select a valid category", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         Mission mission = new Mission(
                 null, // id will be set by repo/db
@@ -147,12 +211,13 @@ public class MissionCreationActivity extends AppCompatActivity {
                 frequency,
                 repeatInterval,
                 repeatUnit,
-                category,
+                categoryId, // Use categoryId instead of category object
                 difficulty,
                 importance,
                 userId,
-                selectedDueDate // Add the due date
+                selectedDueDate
         );
+
         missionRepository.createMissionWithXPCalculation(mission).addOnCompleteListener(task -> {
             runOnUiThread(() -> {
                 if (task.isSuccessful()) {
@@ -176,5 +241,11 @@ public class MissionCreationActivity extends AppCompatActivity {
             return currentUser.getUid();
         }
         return null; // Return null if no user is authenticated
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
     }
 }

@@ -31,31 +31,6 @@ public class Mission {
         }
     }
 
-    public enum Category {
-        HEALTH(0xFF4CAF50), // Green
-        PROFESSION(0xFF2196F3), // Blue
-        ENTERTAINMENT(0xFFFFC107), // Amber
-        CHORE(0xFFF44336); // Red
-
-        @ColorInt
-        public final int color;
-
-        Category(int color) {
-            this.color = color;
-        }
-
-        @Override
-        public String toString() {
-            switch (this) {
-                case HEALTH: return "Health";
-                case PROFESSION: return "Profession";
-                case ENTERTAINMENT: return "Entertainment";
-                case CHORE: return "Chore";
-                default: return super.toString();
-            }
-        }
-    }
-
     public enum Difficulty {
         VERY_EASY(1),
         EASY(3),
@@ -118,7 +93,7 @@ public class Mission {
     private FrequencyType frequency;
     private Integer repeatInterval; // null if ONCE
     private RepeatUnit repeatUnit; // null if ONCE
-    private Category category;
+    private String categoryId; // Changed from Category enum to String categoryId
     private Difficulty difficulty;
     private Importance importance;
     private String userId;
@@ -128,14 +103,14 @@ public class Mission {
     private java.util.Date finalizationDateTime;
     private java.util.Date dueDateTime; // When mission should be completed (single) or when repeating should stop
 
-    public Mission(String id, String name, String description, FrequencyType frequency, Integer repeatInterval, RepeatUnit repeatUnit, Category category, Difficulty difficulty, Importance importance, String userId, java.util.Date dueDateTime) {
+    public Mission(String id, String name, String description, FrequencyType frequency, Integer repeatInterval, RepeatUnit repeatUnit, String categoryId, Difficulty difficulty, Importance importance, String userId, java.util.Date dueDateTime) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.frequency = frequency;
         this.repeatInterval = repeatInterval;
         this.repeatUnit = repeatUnit;
-        this.category = category;
+        this.categoryId = categoryId; // Changed from category to categoryId
         this.difficulty = difficulty;
         this.importance = importance;
         this.userId = userId;
@@ -169,8 +144,8 @@ public class Mission {
     public RepeatUnit getRepeatUnit() { return repeatUnit; }
     public void setRepeatUnit(RepeatUnit repeatUnit) { this.repeatUnit = repeatUnit; }
 
-    public Category getCategory() { return category; }
-    public void setCategory(Category category) { this.category = category; }
+    public String getCategoryId() { return categoryId; } // Changed getter
+    public void setCategoryId(String categoryId) { this.categoryId = categoryId; } // Changed setter
 
     public Difficulty getDifficulty() { return difficulty; }
     public void setDifficulty(Difficulty difficulty) { this.difficulty = difficulty; }

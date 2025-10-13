@@ -11,12 +11,18 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.CalendarDay;
 import com.example.rpgapp.model.Mission;
+import com.example.rpgapp.model.Category;
+import com.example.rpgapp.repository.CategoryRepository;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.CalendarViewHolder> {
     private List<CalendarDay> calendarDays;
     private OnDayClickListener listener;
+    private Map<String, Category> categoryCache;
+    private CategoryRepository categoryRepository;
 
     public interface OnDayClickListener {
         void onDayClick(CalendarDay day);
@@ -25,6 +31,19 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.Calend
     public CalendarAdapter(List<CalendarDay> calendarDays, OnDayClickListener listener) {
         this.calendarDays = calendarDays;
         this.listener = listener;
+        this.categoryCache = new HashMap<>();
+        this.categoryRepository = new CategoryRepository();
+    }
+
+    // Method to set categories for caching (call this from the activity/fragment)
+    public void setCategoryCache(List<Category> categories) {
+        categoryCache.clear();
+        for (Category category : categories) {
+            if (category.getId() != null) {
+                categoryCache.put(category.getId(), category);
+            }
+        }
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -37,7 +56,7 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.Calend
     @Override
     public void onBindViewHolder(@NonNull CalendarViewHolder holder, int position) {
         CalendarDay day = calendarDays.get(position);
-        holder.bind(day, listener);
+        holder.bind(day, listener, this);
     }
 
     @Override
@@ -45,7 +64,7 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.Calend
         return calendarDays.size();
     }
 
-    static class CalendarViewHolder extends RecyclerView.ViewHolder {
+    class CalendarViewHolder extends RecyclerView.ViewHolder {
         private TextView textViewDayNumber;
         private LinearLayout layoutMissions;
         private View viewEmptyDay;
@@ -57,7 +76,7 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.Calend
             viewEmptyDay = itemView.findViewById(R.id.viewEmptyDay);
         }
 
-        public void bind(CalendarDay day, OnDayClickListener listener) {
+        public void bind(CalendarDay day, OnDayClickListener listener, CalendarAdapter adapter) {
             textViewDayNumber.setText(String.valueOf(day.getDayNumber()));
             layoutMissions.removeAllViews();
 
@@ -66,7 +85,7 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.Calend
 
                 // Add mission indicators for each mission
                 for (Mission mission : day.getMissions()) {
-                    TextView missionIndicator = createMissionIndicator(itemView.getContext(), mission);
+                    TextView missionIndicator = createMissionIndicator(itemView.getContext(), mission, adapter);
                     layoutMissions.addView(missionIndicator);
                 }
             } else {
@@ -80,7 +99,7 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.Calend
             });
         }
 
-        private TextView createMissionIndicator(Context context, Mission mission) {
+        private TextView createMissionIndicator(Context context, Mission mission, CalendarAdapter adapter) {
             TextView indicator = new TextView(context);
 
             // Set mission name (truncated if too long)
@@ -90,9 +109,8 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.Calend
             }
             indicator.setText(displayName);
 
-            // Set category color as background
-            int backgroundColor = mission.getCategory() != null ?
-                mission.getCategory().color : 0xFF9E9E9E;
+            // Set category color as background using categoryId
+            int backgroundColor = getCategoryColor(mission.getCategoryId(), adapter);
             indicator.setBackgroundColor(backgroundColor);
 
             // Set text color and styling
@@ -109,6 +127,14 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.Calend
             indicator.setLayoutParams(params);
 
             return indicator;
+        }
+
+        private int getCategoryColor(String categoryId, CalendarAdapter adapter) {
+            if (categoryId != null && adapter.categoryCache.containsKey(categoryId)) {
+                Category category = adapter.categoryCache.get(categoryId);
+                return category.getColor();
+            }
+            return 0xFF9E9E9E; // Default grey color if category not found
         }
     }
 }

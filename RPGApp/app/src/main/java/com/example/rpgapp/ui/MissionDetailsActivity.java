@@ -10,14 +10,20 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.Mission;
 import com.example.rpgapp.model.User;
+import com.example.rpgapp.model.Category;
 import com.example.rpgapp.repository.MissionRepository;
 import com.example.rpgapp.repository.UserRepository;
+import com.example.rpgapp.repository.CategoryRepository;
 import com.example.rpgapp.service.AuthService;
 import com.example.rpgapp.callback.AuthCallback;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.auth.FirebaseUser;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
 
 public class MissionDetailsActivity extends AppCompatActivity {
     private TextView textViewMissionName, textViewMissionDescription, textViewCategory, textViewDifficulty;
@@ -35,6 +41,8 @@ public class MissionDetailsActivity extends AppCompatActivity {
     // User repository and auth service for XP awarding
     private UserRepository userRepository;
     private AuthService authService;
+    private CategoryRepository categoryRepository;
+    private Map<String, Category> categoryCache;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -51,11 +59,13 @@ public class MissionDetailsActivity extends AppCompatActivity {
         missionRepository = new MissionRepository();
         userRepository = new UserRepository(this);
         authService = new AuthService(this);
+        categoryRepository = new CategoryRepository();
+        categoryCache = new HashMap<>();
 
         missionId = getIntent().getStringExtra("MISSION_ID");
 
         if (missionId != null) {
-            loadMissionDetails();
+            loadCategoriesAndMissionDetails();
         } else {
             finish();
         }
@@ -271,6 +281,43 @@ public class MissionDetailsActivity extends AppCompatActivity {
         }
     }
 
+    private void loadCategoriesAndMissionDetails() {
+        FirebaseUser firebaseUser = authService.getCurrentFirebaseUser();
+        if (firebaseUser == null) {
+            Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        // First load categories, then load mission details
+        categoryRepository.getCategoriesByUserId(firebaseUser.getUid(), new CategoryRepository.CategoryCallback<List<Category>>() {
+            @Override
+            public void onResult(List<Category> categories) {
+                runOnUiThread(() -> {
+                    // Populate category cache
+                    categoryCache.clear();
+                    for (Category category : categories) {
+                        if (category.getId() != null) {
+                            categoryCache.put(category.getId(), category);
+                        }
+                    }
+
+                    // Now load mission details
+                    loadMissionDetails();
+                });
+            }
+
+            @Override
+            public void onError(Exception e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(MissionDetailsActivity.this, "Error loading categories: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    // Still try to load mission details even if categories fail
+                    loadMissionDetails();
+                });
+            }
+        });
+    }
+
     private void loadMissionDetails() {
         missionRepository.getMissionById(missionId).addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
@@ -292,8 +339,10 @@ public class MissionDetailsActivity extends AppCompatActivity {
         textViewMissionDescription.setText(currentMission.getDescription() != null ?
             currentMission.getDescription() : "No description");
 
-        textViewCategory.setText(currentMission.getCategory() != null ?
-            currentMission.getCategory().toString() : "");
+        // Get category name from cache using categoryId
+        String categoryName = getCategoryName(currentMission.getCategoryId());
+        textViewCategory.setText(categoryName);
+
         textViewDifficulty.setText(currentMission.getDifficulty() != null ?
             currentMission.getDifficulty().toString() : "");
         textViewImportance.setText(currentMission.getImportance() != null ?
@@ -349,6 +398,14 @@ public class MissionDetailsActivity extends AppCompatActivity {
         } else {
             textViewFinalizationLabel.setText("");
         }
+    }
+
+    private String getCategoryName(String categoryId) {
+        if (categoryId != null && categoryCache.containsKey(categoryId)) {
+            Category category = categoryCache.get(categoryId);
+            return category.getName();
+        }
+        return "No Category"; // Default text if category not found
     }
 
     private void updateMission() {

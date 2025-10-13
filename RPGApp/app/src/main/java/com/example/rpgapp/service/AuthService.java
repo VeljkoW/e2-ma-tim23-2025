@@ -208,6 +208,11 @@ public class AuthService
         }
     }
 
+    public FirebaseUser getCurrentFirebaseUser()
+    {
+        return firebaseAuth.getCurrentUser();
+    }
+
     private void saveUserSession(String userId)
     {
         SharedPreferences.Editor editor = sharedPreferences.edit();

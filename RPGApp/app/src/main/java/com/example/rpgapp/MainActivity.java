@@ -71,6 +71,12 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.MissionCreationActivity.class);
             startActivity(intent);
         });
+
+        // Add listener for Create Category button
+        findViewById(R.id.buttonCreateCategory).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.CategoryCreationActivity.class);
+            startActivity(intent);
+        });
     }
 
     @Override
