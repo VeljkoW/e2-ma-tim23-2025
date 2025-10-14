@@ -17,13 +17,14 @@ import com.example.rpgapp.callback.AuthCallback;
 import com.example.rpgapp.model.User;
 import com.example.rpgapp.service.AuthService;
 import com.example.rpgapp.ui.LoginActivity;
+import com.example.rpgapp.ui.ProfileActivity;
 import com.example.rpgapp.database.DatabaseHelper;
 import com.google.android.material.appbar.MaterialToolbar;
 
 public class MainActivity extends AppCompatActivity {
 
     private AuthService authService;
-    private DatabaseHelper dbHelper; // Držim referencu na bazu da ostane otvorena
+    private DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,7 +87,8 @@ public class MainActivity extends AppCompatActivity {
         }
         else if (id == R.id.action_profile)
         {
-            Toast.makeText(this, "Profile", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+            startActivity(intent);
             return true;
         }
 

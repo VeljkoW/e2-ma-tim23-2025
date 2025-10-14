@@ -24,4 +24,46 @@
     <string name="welcome_to_the_rpg_tracker_app">Welcome to the RPG tracker app!</string>
     <string name="create_account">Create Account</string>
     <string name="app_icon">App icon</string>
+    
+    <!-- Profile Strings -->
+    <string name="profile_title">Profile</string>
+    <string name="level">Level</string>
+    <string name="title_label">Title</string>
+    <string name="power_points">Power Points (PP)</string>
+    <string name="experience_points">Experience Points (XP)</string>
+    <string name="coins">Coins</string>
+    <string name="badges">Badges</string>
+    <string name="equipment">Equipment</string>
+    <string name="change_password">Change Password</string>
+    <string name="old_password">Old Password</string>
+    <string name="new_password">New Password</string>
+    <string name="confirm_new_password">Confirm New Password</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="xp_progress">%1$d / %2$d XP</string>
+    <string name="equipped">Equipped</string>
+    <string name="badge_locked">Locked</string>
+    <string name="badge_unlocked">Unlocked</string>
+    
+    <!-- Statistics Strings -->
+    <string name="statistics_title">Statistics</string>
+    <string name="active_days">Active Days Streak</string>
+    <string name="tasks_overview">Tasks Overview</string>
+    <string name="tasks_created">Created</string>
+    <string name="tasks_completed">Completed</string>
+    <string name="tasks_incomplete">Incomplete</string>
+    <string name="tasks_cancelled">Cancelled</string>
+    <string name="longest_streak">Longest Task Streak</string>
+    <string name="current_streak">Current Streak</string>
+    <string name="tasks_by_category">Tasks by Category</string>
+    <string name="average_difficulty">Average Task Difficulty</string>
+    <string name="xp_last_7_days">XP Last 7 Days</string>
+    <string name="special_missions">Special Missions</string>
+    <string name="missions_started">Started</string>
+    <string name="missions_completed">Completed</string>
+    <string name="days_format">%d days</string>
+    <string name="streak_format">%d day streak</string>
+    
+    <!-- Common -->
+    <string name="back">Back</string>
+    <string name="view_statistics">View Statistics</string>
 </resources>

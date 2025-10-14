@@ -38,6 +38,18 @@
             android:name=".MainActivity"
             android:exported="false" />
 
+        <!-- Profile Activity -->
+        <activity
+            android:name=".ui.ProfileActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Statistics Activity -->
+        <activity
+            android:name=".ui.StatisticsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
     </application>
 
 </manifest>
