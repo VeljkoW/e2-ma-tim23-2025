@@ -66,6 +66,24 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        // Add listener for Create Mission button
+        findViewById(R.id.buttonCreateMission).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.MissionCreationActivity.class);
+            startActivity(intent);
+        });
+
+        // Add listener for Create Category button
+        findViewById(R.id.buttonCreateCategory).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.CategoryCreationActivity.class);
+            startActivity(intent);
+        });
+
+        // Add listener for View Categories button
+        findViewById(R.id.buttonViewCategories).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.CategoriesListActivity.class);
+            startActivity(intent);
+        });
     }
 
     @Override
@@ -83,6 +101,18 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_logout)
         {
             logout();
+            return true;
+        }
+        else if (id == R.id.action_my_missions)
+        {
+            Intent intent = new Intent(this, com.example.rpgapp.ui.MissionsListActivity.class);
+            startActivity(intent);
+            return true;
+        }
+        else if (id == R.id.action_calendar)
+        {
+            Intent intent = new Intent(this, com.example.rpgapp.ui.CalendarActivity.class);
+            startActivity(intent);
             return true;
         }
         else if (id == R.id.action_profile)

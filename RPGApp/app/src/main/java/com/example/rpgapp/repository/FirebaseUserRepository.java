@@ -33,6 +33,7 @@ public class FirebaseUserRepository
     public void saveUser(User user, AuthCallback<Boolean> onComplete)
     {
         Log.d(TAG, "saveUser pozvan za username: " + user.getUsername());
+        Log.d(TAG, "Saving to Firestore collection: " + COLLECTION_USERS + ", document ID: " + user.getId());
 
         try
         {
@@ -50,11 +51,18 @@ public class FirebaseUserRepository
             userData.put("registrationDate", user.getRegistrationDate());
             userData.put("lastLogin", user.getLastLogin());
 
+            Log.d(TAG, "Attempting to write to Firestore...");
             db.collection(COLLECTION_USERS)
                 .document(user.getId())
                 .set(userData)
-                .addOnSuccessListener(aVoid -> onComplete.onResult(true))
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "✓ Firestore write SUCCESSFUL for user: " + user.getUsername());
+                    onComplete.onResult(true);
+                })
                 .addOnFailureListener(e -> {
+                    Log.e(TAG, "✗ Firestore write FAILED for user: " + user.getUsername());
+                    Log.e(TAG, "Error type: " + e.getClass().getSimpleName());
+                    Log.e(TAG, "Error message: " + e.getMessage());
                     e.printStackTrace();
                     onComplete.onResult(false);
                 });

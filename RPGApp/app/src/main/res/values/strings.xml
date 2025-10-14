@@ -24,7 +24,7 @@
     <string name="welcome_to_the_rpg_tracker_app">Welcome to the RPG tracker app!</string>
     <string name="create_account">Create Account</string>
     <string name="app_icon">App icon</string>
-    
+
     <!-- Profile Strings -->
     <string name="profile_title">Profile</string>
     <string name="level">Level</string>
@@ -43,7 +43,7 @@
     <string name="equipped">Equipped</string>
     <string name="badge_locked">Locked</string>
     <string name="badge_unlocked">Unlocked</string>
-    
+
     <!-- Statistics Strings -->
     <string name="statistics_title">Statistics</string>
     <string name="active_days">Active Days Streak</string>
@@ -62,8 +62,34 @@
     <string name="missions_completed">Completed</string>
     <string name="days_format">%d days</string>
     <string name="streak_format">%d day streak</string>
-    
+
     <!-- Common -->
     <string name="back">Back</string>
     <string name="view_statistics">View Statistics</string>
+    <string name="mission_name">Mission Name</string>
+    <string name="description_optional">Description (optional)</string>
+    <string name="frequency">Frequency</string>
+    <string name="repeat_interval">Repeat Interval</string>
+    <string name="category">Category</string>
+    <string name="difficulty">Difficulty</string>
+    <string name="importance">Importance</string>
+    <string name="create_mission">Create Mission</string>
+    <string name="my_missions">My Missions</string>
+    <string name="mission_details">Mission Details</string>
+    <string name="update_mission">Update Mission</string>
+    <string name="delete_mission">Delete Mission</string>
+    <string name="change_status">Change Status</string>
+    <string name="confirm_delete">Are you sure you want to delete this mission?</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="status">Status</string>
+    <string name="created">Created</string>
+    <string name="completed">Completed</string>
+    <string name="failed">Failed</string>
+    <string name="cancelled">Cancelled</string>
+    <string name="active">Active</string>
+    <string name="paused">Paused</string>
+    <string name="total_xp">Total XP</string>
+    <string name="repeat_every">Repeat every</string>
+    <string name="calendar">Calendar</string>
 </resources>

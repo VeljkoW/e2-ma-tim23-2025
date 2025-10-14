@@ -4,6 +4,7 @@
     <color name="white">#FFFFFFFF</color>
 
     <!-- Primary RPG Colors -->
+    <color name="colorPrimary">#8B4513</color>
     <color name="primary_color">#8B4513</color>
     <color name="primary_dark">#5D2F0A</color>
     <color name="accent_color">#FFD700</color>

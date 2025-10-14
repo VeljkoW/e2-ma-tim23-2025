@@ -39,30 +39,45 @@ public class UserRepository
     public void saveUser(User user, AuthCallback<Boolean> onComplete)
     {
         Log.d(TAG, "saveUser called for username: " + user.getUsername());
-        Log.d(TAG, "Attempting to insert user into SQLite database");
-        
-        // saves it first into the local database then if it succeeds tries to save it into firebase
-        long result = userDao.insertUser(user);
-        
-        Log.d(TAG, "SQLite insertUser result: " + result + " (>0 = success, -1 = failed)");
+        Log.d(TAG, "Saving to Firebase first (priority)");
 
-        if (result != -1)
-        {
-            Log.d(TAG, "SQLite insert successful, now saving to Firebase");
-            firebaseRepository.saveUser(user, new AuthCallback<Boolean>() {
-                @Override
-                public void onResult(Boolean success)
+        // Save to Firebase first (this is the source of truth)
+        firebaseRepository.saveUser(user, new AuthCallback<Boolean>() {
+            @Override
+            public void onResult(Boolean firebaseSuccess)
+            {
+                Log.d(TAG, "Firebase save result: " + firebaseSuccess);
+
+                if (firebaseSuccess)
                 {
-                    Log.d(TAG, "Firebase save result: " + success);
+                    // Try to save to SQLite for local caching
+                    Log.d(TAG, "Attempting to insert user into SQLite database");
+                    long result = userDao.insertUser(user);
+
+                    Log.d(TAG, "SQLite insertUser result: " + result + " (>0 = success, -1 = failed)");
+
+                    if (result == -1)
+                    {
+                        // If insert failed (likely duplicate email), try updating instead
+                        Log.w(TAG, "SQLite insert failed, attempting update instead");
+                        try {
+                            userDao.updateUser(user);
+                            Log.d(TAG, "SQLite update successful");
+                        } catch (Exception e) {
+                            Log.w(TAG, "SQLite update also failed: " + e.getMessage());
+                            // Not critical - Firebase save succeeded
+                        }
+                    }
+
                     onComplete.onResult(true);
                 }
-            });
-        }
-        else
-        {
-            Log.e(TAG, "SQLite insert FAILED for user: " + user.getUsername());
-            onComplete.onResult(false);
-        }
+                else
+                {
+                    Log.e(TAG, "Firebase save FAILED for user: " + user.getUsername());
+                    onComplete.onResult(false);
+                }
+            }
+        });
     }
 
     public void getUserById(String userId, AuthCallback<User> onComplete)
@@ -115,15 +130,35 @@ public class UserRepository
     }
 
     public void updateUser(User user, AuthCallback<Boolean> onComplete) {
-        int result = userDao.updateUser(user);
+        Log.d(TAG, "updateUser called for user: " + user.getUsername() + " (ID: " + user.getId() + ")");
 
-        if (result > 0)
-        {
+        int result = userDao.updateUser(user);
+        Log.d(TAG, "Local SQLite update result: " + result + " (>0 = success)");
+
+        if (result > 0) {
+            Log.d(TAG, "Local update successful, updating Firebase");
             firebaseRepository.updateUser(user, onComplete);
-        }
-        else
-        {
-            onComplete.onResult(false);
+        } else {
+            Log.w(TAG, "Local update failed, attempting Firebase update anyway");
+            // Still try Firebase update even if local fails
+            firebaseRepository.updateUser(user, new AuthCallback<Boolean>() {
+                @Override
+                public void onResult(Boolean success) {
+                    if (success != null && success) {
+                        Log.d(TAG, "Firebase update successful, re-syncing to local DB");
+                        // If Firebase succeeds, try to insert/update locally again
+                        long insertResult = userDao.insertUser(user);
+                        if (insertResult == -1) {
+                            // Insert failed, user might already exist, try update again
+                            userDao.updateUser(user);
+                        }
+                        onComplete.onResult(true);
+                    } else {
+                        Log.e(TAG, "Both local and Firebase updates failed");
+                        onComplete.onResult(false);
+                    }
+                }
+            });
         }
     }
 
@@ -148,6 +183,91 @@ public class UserRepository
                 }
             }
         });
+    }
+
+    public com.google.android.gms.tasks.Task<Void> awardXpToUser(String userId, int xpAmount) {
+        Log.d(TAG, "awardXpToUser called for userId: " + userId + ", xpAmount: " + xpAmount);
+        com.google.android.gms.tasks.TaskCompletionSource<Void> taskCompletionSource = new com.google.android.gms.tasks.TaskCompletionSource<>();
+
+        // Directly use Firebase to update XP, bypassing complex local DB sync
+        firebaseRepository.getUserById(userId, new AuthCallback<User>() {
+            @Override
+            public void onResult(User user) {
+                if (user != null) {
+                    Log.d(TAG, "User found via Firebase: " + user.getUsername() + ", current XP: " + user.getExperiencePoints());
+
+                    // Add XP to user
+                    user.addExperiencePoints(xpAmount);
+                    Log.d(TAG, "New XP: " + user.getExperiencePoints() + " (added " + xpAmount + ")");
+
+                    // Update directly to Firebase only
+                    firebaseRepository.updateUser(user, new AuthCallback<Boolean>() {
+                        @Override
+                        public void onResult(Boolean success) {
+                            Log.d(TAG, "Firebase update result: " + success);
+                            if (success != null && success) {
+                                // Try to update local DB in background, but don't fail if it doesn't work
+                                try {
+                                    userDao.updateUser(user);
+                                    Log.d(TAG, "Local DB sync successful");
+                                } catch (Exception e) {
+                                    Log.w(TAG, "Local DB sync failed, but Firebase succeeded: " + e.getMessage());
+                                }
+                                taskCompletionSource.setResult(null);
+                            } else {
+                                Log.e(TAG, "Firebase update failed");
+                                taskCompletionSource.setException(new Exception("Firebase update failed"));
+                            }
+                        }
+                    });
+                } else {
+                    Log.e(TAG, "User not found in Firebase for ID: " + userId);
+                    taskCompletionSource.setException(new Exception("User not found"));
+                }
+            }
+        });
+
+        return taskCompletionSource.getTask();
+    }
+
+    // Add a fallback XP awarding method that works without Firebase
+    public com.google.android.gms.tasks.Task<Void> awardXpToUserFallback(String userId, int xpAmount) {
+        Log.d(TAG, "awardXpToUserFallback called for userId: " + userId + ", xpAmount: " + xpAmount);
+        com.google.android.gms.tasks.TaskCompletionSource<Void> taskCompletionSource = new com.google.android.gms.tasks.TaskCompletionSource<>();
+
+        // Try local database first
+        User localUser = userDao.getUserById(userId);
+        if (localUser != null) {
+            Log.d(TAG, "User found locally: " + localUser.getUsername() + ", current XP: " + localUser.getExperiencePoints());
+
+            // Add XP to user
+            localUser.addExperiencePoints(xpAmount);
+            Log.d(TAG, "New XP: " + localUser.getExperiencePoints() + " (added " + xpAmount + ")");
+
+            // Update local database
+            int result = userDao.updateUser(localUser);
+            if (result > 0) {
+                Log.d(TAG, "Local XP update successful");
+
+                // Try Firebase in background, but don't fail if it doesn't work
+                firebaseRepository.updateUser(localUser, new AuthCallback<Boolean>() {
+                    @Override
+                    public void onResult(Boolean success) {
+                        Log.d(TAG, "Background Firebase sync result: " + success);
+                    }
+                });
+
+                taskCompletionSource.setResult(null);
+            } else {
+                Log.e(TAG, "Local XP update failed");
+                taskCompletionSource.setException(new Exception("Local database update failed"));
+            }
+        } else {
+            Log.e(TAG, "User not found locally for ID: " + userId);
+            taskCompletionSource.setException(new Exception("User not found in local database"));
+        }
+
+        return taskCompletionSource.getTask();
     }
 
     public void updateEmailVerification(String userId, boolean isVerified, AuthCallback<Boolean> onComplete) {
@@ -186,3 +306,4 @@ public class UserRepository
         }
     }
 }
+
