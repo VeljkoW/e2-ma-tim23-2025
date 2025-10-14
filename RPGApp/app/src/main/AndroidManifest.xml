@@ -68,6 +68,18 @@
             android:exported="false"
             android:theme="@style/Theme.RPGApp.NoActionBar" />
 
+        <!-- Categories List Activity -->
+        <activity
+            android:name=".ui.CategoriesListActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
+        <!-- Category Detail Activity -->
+        <activity
+            android:name=".ui.CategoryDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
         <!-- Calendar Activity -->
         <activity
             android:name=".ui.CalendarActivity"

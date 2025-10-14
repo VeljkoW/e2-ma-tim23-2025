@@ -39,30 +39,45 @@ public class UserRepository
     public void saveUser(User user, AuthCallback<Boolean> onComplete)
     {
         Log.d(TAG, "saveUser called for username: " + user.getUsername());
-        Log.d(TAG, "Attempting to insert user into SQLite database");
-        
-        // saves it first into the local database then if it succeeds tries to save it into firebase
-        long result = userDao.insertUser(user);
-        
-        Log.d(TAG, "SQLite insertUser result: " + result + " (>0 = success, -1 = failed)");
+        Log.d(TAG, "Saving to Firebase first (priority)");
 
-        if (result != -1)
-        {
-            Log.d(TAG, "SQLite insert successful, now saving to Firebase");
-            firebaseRepository.saveUser(user, new AuthCallback<Boolean>() {
-                @Override
-                public void onResult(Boolean success)
+        // Save to Firebase first (this is the source of truth)
+        firebaseRepository.saveUser(user, new AuthCallback<Boolean>() {
+            @Override
+            public void onResult(Boolean firebaseSuccess)
+            {
+                Log.d(TAG, "Firebase save result: " + firebaseSuccess);
+
+                if (firebaseSuccess)
                 {
-                    Log.d(TAG, "Firebase save result: " + success);
+                    // Try to save to SQLite for local caching
+                    Log.d(TAG, "Attempting to insert user into SQLite database");
+                    long result = userDao.insertUser(user);
+
+                    Log.d(TAG, "SQLite insertUser result: " + result + " (>0 = success, -1 = failed)");
+
+                    if (result == -1)
+                    {
+                        // If insert failed (likely duplicate email), try updating instead
+                        Log.w(TAG, "SQLite insert failed, attempting update instead");
+                        try {
+                            userDao.updateUser(user);
+                            Log.d(TAG, "SQLite update successful");
+                        } catch (Exception e) {
+                            Log.w(TAG, "SQLite update also failed: " + e.getMessage());
+                            // Not critical - Firebase save succeeded
+                        }
+                    }
+
                     onComplete.onResult(true);
                 }
-            });
-        }
-        else
-        {
-            Log.e(TAG, "SQLite insert FAILED for user: " + user.getUsername());
-            onComplete.onResult(false);
-        }
+                else
+                {
+                    Log.e(TAG, "Firebase save FAILED for user: " + user.getUsername());
+                    onComplete.onResult(false);
+                }
+            }
+        });
     }
 
     public void getUserById(String userId, AuthCallback<User> onComplete)
@@ -291,3 +306,4 @@ public class UserRepository
         }
     }
 }
+
