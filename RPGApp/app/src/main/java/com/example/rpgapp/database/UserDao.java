@@ -41,6 +41,7 @@ public class UserDao
             values.put(DatabaseHelper.COLUMN_USER_REGISTRATION_DATE, user.getRegistrationDate() != null ? user.getRegistrationDate().getTime() : System.currentTimeMillis());
             values.put(DatabaseHelper.COLUMN_USER_LAST_LOGIN, user.getLastLogin() != null ? user.getLastLogin().getTime() : null);
             values.put(DatabaseHelper.COLUMN_USER_ACTIVE_DAYS_STREAK, user.getActiveDaysStreak());
+            values.put(DatabaseHelper.COLUMN_USER_LAST_ACTIVITY_DAY_UPDATE, user.getLastActivityDayUpdate() != null ? user.getLastActivityDayUpdate().getTime() : null);
 
             Log.d("UserDao", "ContentValues prepared, executing INSERT into " + DatabaseHelper.TABLE_USERS);
             result = db.insert(DatabaseHelper.TABLE_USERS, null, values);
@@ -215,6 +216,7 @@ public class UserDao
             values.put(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED, user.isEmailVerified() ? 1 : 0);
             values.put(DatabaseHelper.COLUMN_USER_LAST_LOGIN, user.getLastLogin() != null ? user.getLastLogin().getTime() : null);
             values.put(DatabaseHelper.COLUMN_USER_ACTIVE_DAYS_STREAK, user.getActiveDaysStreak());
+            values.put(DatabaseHelper.COLUMN_USER_LAST_ACTIVITY_DAY_UPDATE, user.getLastActivityDayUpdate() != null ? user.getLastActivityDayUpdate().getTime() : null);
 
             String whereClause = DatabaseHelper.COLUMN_USER_ID + " = ?";
             String[] whereArgs = {user.getId()};
@@ -271,8 +273,8 @@ public class UserDao
             e.printStackTrace();
         } finally
         {
-            // DON'T CLOSE DB - keepAliveDb stays open
-            Log.d("UserDao", "keepAliveDb left open for Database Inspector");
+            db.close();
+            Log.d("UserDao", "Database closed after updateEmailVerification");
         }
     }
 
@@ -306,6 +308,13 @@ public class UserDao
         if (!cursor.isNull(activeDaysStreakIndex))
         {
             user.setActiveDaysStreak(cursor.getInt(activeDaysStreakIndex));
+        }
+
+        int lastActivityDayUpdateIndex = cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_LAST_ACTIVITY_DAY_UPDATE);
+        if (!cursor.isNull(lastActivityDayUpdateIndex))
+        {
+            long lastActivityDayUpdate = cursor.getLong(lastActivityDayUpdateIndex);
+            user.setLastActivityDayUpdate(new Date(lastActivityDayUpdate));
         }
 
         return user;

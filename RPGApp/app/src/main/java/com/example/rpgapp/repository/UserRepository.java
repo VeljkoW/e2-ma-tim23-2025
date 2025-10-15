@@ -340,55 +340,63 @@ public class UserRepository
             public void onResult(User user) {
                 if (user != null)
                 {
-                    Date lastLogin = user.getLastLogin();
+                    Date lastActivityDay = user.getLastActivityDayUpdate(); // Koristimo lastActivityDayUpdate umesto lastLogin
                     Date now = new Date();
 
-                    Calendar lastLoginCal = Calendar.getInstance();
+                    Calendar lastActivityCal = Calendar.getInstance();
                     Calendar nowCal = Calendar.getInstance();
                     nowCal.setTime(now);
 
-                    if (lastLogin != null)
+                    if (lastActivityDay != null)
                     {
-                        lastLoginCal.setTime(lastLogin);
+                        lastActivityCal.setTime(lastActivityDay);
 
                         // Postavi na početak dana za poređenje
-                        lastLoginCal.set(Calendar.HOUR_OF_DAY, 0);
-                        lastLoginCal.set(Calendar.MINUTE, 0);
-                        lastLoginCal.set(Calendar.SECOND, 0);
-                        lastLoginCal.set(Calendar.MILLISECOND, 0);
+                        lastActivityCal.set(Calendar.HOUR_OF_DAY, 0);
+                        lastActivityCal.set(Calendar.MINUTE, 0);
+                        lastActivityCal.set(Calendar.SECOND, 0);
+                        lastActivityCal.set(Calendar.MILLISECOND, 0);
 
                         nowCal.set(Calendar.HOUR_OF_DAY, 0);
                         nowCal.set(Calendar.MINUTE, 0);
                         nowCal.set(Calendar.SECOND, 0);
                         nowCal.set(Calendar.MILLISECOND, 0);
 
-                        long diffInMillis = nowCal.getTimeInMillis() - lastLoginCal.getTimeInMillis();
+                        long diffInMillis = nowCal.getTimeInMillis() - lastActivityCal.getTimeInMillis();
                         long daysDiff = diffInMillis / (1000 * 60 * 60 * 24);
 
                         if (daysDiff == 0)
                         {
+                            // Isti dan - ne ažuriramo lastActivityDayUpdate, samo lastLogin
                             user.setLastLogin(now);
                         }
                         else if (daysDiff == 1)
                         {
+                            // Uzastopni dan - povećavamo streak i ažuriramo oba datuma
                             user.setActiveDaysStreak(user.getActiveDaysStreak() + 1);
+                            user.setLastActivityDayUpdate(now);
                             user.setLastLogin(now);
                         }
                         else
                         {
+                            // Prekinut streak - resetujemo na 1 i ažuriramo oba datuma
                             user.setActiveDaysStreak(1);
+                            user.setLastActivityDayUpdate(now);
                             user.setLastLogin(now);
                         }
 
                         if(user.getActiveDaysStreak() == 0)
                         {
                             user.setActiveDaysStreak(1);
+                            user.setLastActivityDayUpdate(now);
                             user.setLastLogin(now);
                         }
                     }
                     else
                     {
+                        // Prvi put - postavljamo oba datuma
                         user.setActiveDaysStreak(1);
+                        user.setLastActivityDayUpdate(now);
                         user.setLastLogin(now);
                     }
 

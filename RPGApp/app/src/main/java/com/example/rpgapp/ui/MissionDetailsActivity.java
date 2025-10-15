@@ -56,7 +56,7 @@ public class MissionDetailsActivity extends AppCompatActivity {
         initViews();
         setupListeners();
 
-        missionRepository = new MissionRepository();
+        missionRepository = new MissionRepository(this); // Pass context
         userRepository = new UserRepository(this);
         authService = new AuthService(this);
         categoryRepository = new CategoryRepository();

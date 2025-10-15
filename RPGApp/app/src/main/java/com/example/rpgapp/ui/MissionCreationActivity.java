@@ -49,7 +49,7 @@ public class MissionCreationActivity extends AppCompatActivity {
         buttonCreateMission = findViewById(R.id.buttonCreateMission);
         buttonSelectDueDate = findViewById(R.id.buttonSelectDueDate);
 
-        missionRepository = new MissionRepository(); // Adjust if using DI or singleton
+        missionRepository = new MissionRepository(this); // Pass context
         categoryRepository = new CategoryRepository();
         authService = new AuthService(this);
 
@@ -204,6 +204,7 @@ public class MissionCreationActivity extends AppCompatActivity {
             return;
         }
 
+        // Note: userLevel will be set by repository after fetching user data
         Mission mission = new Mission(
                 null, // id will be set by repo/db
                 name,
@@ -211,10 +212,11 @@ public class MissionCreationActivity extends AppCompatActivity {
                 frequency,
                 repeatInterval,
                 repeatUnit,
-                categoryId, // Use categoryId instead of category object
+                categoryId,
                 difficulty,
                 importance,
                 userId,
+                1, // Temporary userLevel, will be updated by repository
                 selectedDueDate
         );
 

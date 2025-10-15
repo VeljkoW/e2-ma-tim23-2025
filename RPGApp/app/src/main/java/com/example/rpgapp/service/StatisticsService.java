@@ -161,14 +161,24 @@ public class StatisticsService {
                         averageDifficultyMap.put(entry.getKey(), average);
                     }
 
-                    // Računanje streak-ova - sortiraj po datumu finalizacije
+                    // Računanje streak-ova - streak se prekida samo sa FAILED misijama
                     int currentStreak = 0;
                     int longestStreak = 0;
 
-                    if (!completedMissions.isEmpty())
+                    // Sakupi sve misije (completed i failed) i sortiraj po datumu
+                    List<Mission> allMissions = new ArrayList<>();
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots)
                     {
-                        // Sortiraj po datumu finalizacije
-                        Collections.sort(completedMissions, new Comparator<Mission>() {
+                        Mission mission = document.toObject(Mission.class);
+                        if (mission != null && mission.getFinalizationDateTime() != null &&
+                                (mission.getStatus() == Mission.Status.COMPLETED || mission.getStatus() == Mission.Status.FAILED)) {
+                            allMissions.add(mission);
+                        }
+                    }
+
+                    if (!allMissions.isEmpty())
+                    {
+                        Collections.sort(allMissions, new Comparator<Mission>() {
                             @Override
                             public int compare(Mission m1, Mission m2) {
                                 if (m1.getFinalizationDateTime() == null) return 1;
@@ -177,54 +187,84 @@ public class StatisticsService {
                             }
                         });
 
-                        int tempStreak = 1;
-                        longestStreak = 1;
-                        Calendar prevCal = Calendar.getInstance();
+                        // Grupiši misije po danima
+                        Map<String, List<Mission>> missionsByDay = new HashMap<>();
+                        for (Mission mission : allMissions) {
+                            String dayKey = sdf.format(mission.getFinalizationDateTime());
+                            if (!missionsByDay.containsKey(dayKey)) {
+                                missionsByDay.put(dayKey, new ArrayList<>());
+                            }
+                            missionsByDay.get(dayKey).add(mission);
+                        }
 
-                        for (int i = 0; i < completedMissions.size(); i++)
-                        {
-                            Mission mission = completedMissions.get(i);
-                            Date finalizationDate = mission.getFinalizationDateTime();
+                        // Izvuci sortirane datume
+                        List<String> sortedDates = new ArrayList<>(missionsByDay.keySet());
+                        Collections.sort(sortedDates);
 
-                            if (finalizationDate != null)
-                            {
-                                if (i == 0) {
-                                    prevCal.setTime(finalizationDate);
-                                    continue;
+                        int tempStreak = 0;
+                        String lastStreakDate = null;
+
+                        for (String dateKey : sortedDates) {
+                            List<Mission> dayMissions = missionsByDay.get(dateKey);
+
+                            // Proveri da li ima FAILED misiju tog dana
+                            boolean hasFailed = false;
+                            for (Mission m : dayMissions) {
+                                if (m.getStatus() == Mission.Status.FAILED) {
+                                    hasFailed = true;
+                                    break;
                                 }
+                            }
 
-                                Calendar currentCal = Calendar.getInstance();
-                                currentCal.setTime(finalizationDate);
-
-                                // Proveri da li je isti dan ili uzastopni dan
-                                long diffInMillis = currentCal.getTimeInMillis() - prevCal.getTimeInMillis();
-                                long daysDiff = diffInMillis / (1000 * 60 * 60 * 24);
-
-                                if (daysDiff <= 1)
-                                {
-                                    // Isti dan ili sledeći dan - nastavi streak
-                                    if (daysDiff == 1)
-                                    {
-                                        tempStreak++;
-                                    }
-                                }
-                                else
-                                {
-                                    // Prekid streak-a
-                                    tempStreak = 1;
-                                }
-
-                                if (tempStreak > longestStreak)
-                                {
+                            if (hasFailed) {
+                                // FAILED misija prekida streak
+                                if (tempStreak > longestStreak) {
                                     longestStreak = tempStreak;
                                 }
+                                tempStreak = 0;
+                                lastStreakDate = null;
+                            } else {
+                                // Dan sa COMPLETED misijama (bez FAILED)
+                                tempStreak++;
+                                lastStreakDate = dateKey;
 
-                                prevCal.setTime(finalizationDate);
+                                if (tempStreak > longestStreak) {
+                                    longestStreak = tempStreak;
+                                }
                             }
                         }
 
-                        // Current streak je tempStreak ako se nastavlja do danas
-                        currentStreak = tempStreak;
+                        // Current streak - proveri da li se nastavlja do danas ili juče
+                        if (lastStreakDate != null && tempStreak > 0) {
+                            try {
+                                Calendar lastStreakCal = Calendar.getInstance();
+                                lastStreakCal.setTime(sdf.parse(lastStreakDate));
+
+                                Calendar todayCal = Calendar.getInstance();
+                                todayCal.set(Calendar.HOUR_OF_DAY, 0);
+                                todayCal.set(Calendar.MINUTE, 0);
+                                todayCal.set(Calendar.SECOND, 0);
+                                todayCal.set(Calendar.MILLISECOND, 0);
+
+                                Calendar yesterdayCal = (Calendar) todayCal.clone();
+                                yesterdayCal.add(Calendar.DAY_OF_YEAR, -1);
+
+                                lastStreakCal.set(Calendar.HOUR_OF_DAY, 0);
+                                lastStreakCal.set(Calendar.MINUTE, 0);
+                                lastStreakCal.set(Calendar.SECOND, 0);
+                                lastStreakCal.set(Calendar.MILLISECOND, 0);
+
+                                if (lastStreakCal.equals(todayCal) || lastStreakCal.equals(yesterdayCal)) {
+                                    currentStreak = tempStreak;
+                                } else {
+                                    currentStreak = 0;
+                                }
+                            } catch (Exception e) {
+                                currentStreak = 0;
+                            }
+                        } else {
+                            currentStreak = 0;
+                        }
                     }
 
                     // Ažuriraj statistics objekat

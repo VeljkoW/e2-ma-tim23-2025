@@ -50,7 +50,7 @@ public class MissionEditActivity extends AppCompatActivity {
         initViews();
         setupSpinners();
 
-        missionRepository = new MissionRepository();
+        missionRepository = new MissionRepository(this); // Pass context
         categoryRepository = new CategoryRepository();
         authService = new AuthService(this);
 
@@ -313,22 +313,17 @@ public class MissionEditActivity extends AppCompatActivity {
         currentMission.setFrequency(frequency);
         currentMission.setRepeatInterval(repeatInterval);
         currentMission.setRepeatUnit(repeatUnit);
-        currentMission.setCategoryId(categoryId); // Use categoryId instead of category object
+        currentMission.setCategoryId(categoryId);
         currentMission.setDifficulty(difficulty);
         currentMission.setImportance(importance);
         currentMission.setDueDateTime(selectedDueDate);
 
-        // Recalculate XP if difficulty or importance changed
-        if (currentMission.getDifficulty() != null && currentMission.getImportance() != null) {
-            int newXP = currentMission.getDifficulty().xp + currentMission.getImportance().xp;
-            currentMission.setTotalXP(newXP);
-        }
-
-        missionRepository.updateMission(missionId, currentMission).addOnCompleteListener(task -> {
+        // Use new method that recalculates XP based on user level
+        missionRepository.updateMissionWithXPCalculation(missionId, currentMission).addOnCompleteListener(task -> {
             runOnUiThread(() -> {
                 if (task.isSuccessful()) {
                     Toast.makeText(this, "Mission updated!", Toast.LENGTH_SHORT).show();
-                    setResult(RESULT_OK); // Indicate data was changed
+                    setResult(RESULT_OK);
                     finish();
                 } else {
                     Toast.makeText(this, "Failed to update mission", Toast.LENGTH_SHORT).show();

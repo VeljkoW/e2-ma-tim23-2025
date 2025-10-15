@@ -16,6 +16,7 @@ public class User {
     private Date registrationDate;
     private Date lastLogin;
     private int activeDaysStreak;
+    private Date lastActivityDayUpdate; // Novi field za pracenje activity days
 
     public User()
     {
@@ -34,6 +35,7 @@ public class User {
         this.isEmailVerified = false;
         this.registrationDate = new Date();
         this.activeDaysStreak = 0;
+        this.lastActivityDayUpdate = null;
     }
 
     // Getters
@@ -50,6 +52,7 @@ public class User {
     public Date getRegistrationDate() { return registrationDate; }
     public Date getLastLogin() { return lastLogin; }
     public int getActiveDaysStreak() { return activeDaysStreak; }
+    public Date getLastActivityDayUpdate() { return lastActivityDayUpdate; }
 
     // Setters
     public void setId(String id) { this.id = id; }
@@ -65,6 +68,7 @@ public class User {
     public void setRegistrationDate(Date registrationDate) { this.registrationDate = registrationDate; }
     public void setLastLogin(Date lastLogin) { this.lastLogin = lastLogin; }
     public void setActiveDaysStreak(int activeDaysStreak) { this.activeDaysStreak = activeDaysStreak; }
+    public void setLastActivityDayUpdate(Date lastActivityDayUpdate) { this.lastActivityDayUpdate = lastActivityDayUpdate; }
 
     public void addExperiencePoints(int xp)
     {
@@ -149,20 +153,24 @@ public class User {
 
     public int getXpForNextLevel()
     {
+        // XP potreban da se pređe sa trenutnog nivoa na sledeći
         if (level == 1)
             return 200;
-
-        int previousLevelXp = getXpForLevel(level);
+        int previousLevelXp = getXpRequiredForLevel(level);
         return (int) Math.ceil((previousLevelXp * 2 + previousLevelXp / 2.0) / 100.0) * 100;
     }
 
-    private int getXpForLevel(int level)
+
+    private int getXpRequiredForLevel(int targetLevel)
     {
-        if (level <= 1)
+        if (targetLevel <= 1)
+            return 0;
+
+        if (targetLevel == 2)
             return 200;
 
         int xp = 200;
-        for (int i = 2; i <= level; i++)
+        for (int i = 3; i <= targetLevel; i++)
         {
             xp = (int) Math.ceil((xp * 2 + xp / 2.0) / 100.0) * 100;
         }
