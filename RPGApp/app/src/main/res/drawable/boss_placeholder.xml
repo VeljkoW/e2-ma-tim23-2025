@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Boss body (dark red circle) -->
+    <path
+        android:fillColor="#8B0000"
+        android:pathData="M100,100m-80,0a80,80 0,1 1,160 0a80,80 0,1 1,-160 0" />
+
+    <!-- Boss left eye (red glowing) -->
+    <path
+        android:fillColor="#FF0000"
+        android:pathData="M75,80m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0" />
+
+    <!-- Boss right eye (red glowing) -->
+    <path
+        android:fillColor="#FF0000"
+        android:pathData="M125,80m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0" />
+
+    <!-- Boss mouth (menacing) -->
+    <path
+        android:fillColor="#FF0000"
+        android:pathData="M70,120 Q100,140 130,120 Q100,130 70,120" />
+
+    <!-- Boss left horn -->
+    <path
+        android:fillColor="#660000"
+        android:pathData="M60,40 L70,20 L80,40 Z" />
+
+    <!-- Boss right horn -->
+    <path
+        android:fillColor="#660000"
+        android:pathData="M120,40 L130,20 L140,40 Z" />
+
+    <!-- Boss top spike -->
+    <path
+        android:fillColor="#660000"
+        android:pathData="M100,20 L105,10 L110,20 Z" />
+
+    <!-- Boss right spike -->
+    <path
+        android:fillColor="#660000"
+        android:pathData="M180,100 L190,95 L180,90 Z" />
+
+    <!-- Boss bottom spike -->
+    <path
+        android:fillColor="#660000"
+        android:pathData="M100,180 L95,190 L90,180 Z" />
+
+    <!-- Boss left spike -->
+    <path
+        android:fillColor="#660000"
+        android:pathData="M20,100 L10,105 L20,110 Z" />
+</vector>

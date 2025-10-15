@@ -229,6 +229,40 @@ public class UserDao
         return rowsAffected;
     }
 
+    public int updateUserByEmail(User user)
+    {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        int rowsAffected = 0;
+
+        try
+        {
+            ContentValues values = new ContentValues();
+            values.put(DatabaseHelper.COLUMN_USER_ID, user.getId()); // Update the ID too
+            values.put(DatabaseHelper.COLUMN_USER_USERNAME, user.getUsername());
+            values.put(DatabaseHelper.COLUMN_USER_AVATAR_ID, user.getAvatarId());
+            values.put(DatabaseHelper.COLUMN_USER_LEVEL, user.getLevel());
+            values.put(DatabaseHelper.COLUMN_USER_TITLE, user.getTitle());
+            values.put(DatabaseHelper.COLUMN_USER_POWER_POINTS, user.getPowerPoints());
+            values.put(DatabaseHelper.COLUMN_USER_EXPERIENCE_POINTS, user.getExperiencePoints());
+            values.put(DatabaseHelper.COLUMN_USER_COINS, user.getCoins());
+            values.put(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED, user.isEmailVerified() ? 1 : 0);
+            values.put(DatabaseHelper.COLUMN_USER_LAST_LOGIN, user.getLastLogin() != null ? user.getLastLogin().getTime() : null);
+
+            String whereClause = DatabaseHelper.COLUMN_USER_EMAIL + " = ?";
+            String[] whereArgs = {user.getEmail()};
+
+            rowsAffected = db.update(DatabaseHelper.TABLE_USERS, values, whereClause, whereArgs);
+        } catch (SQLiteException e)
+        {
+            e.printStackTrace();
+        } finally
+        {
+            db.close();
+        }
+
+        return rowsAffected;
+    }
+
     public void updateLastLogin(String userId)
     {
         SQLiteDatabase db = dbHelper.getWritableDatabase();

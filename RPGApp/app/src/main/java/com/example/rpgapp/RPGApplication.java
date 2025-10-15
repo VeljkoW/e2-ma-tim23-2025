@@ -5,6 +5,7 @@ import android.util.Log;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 
 public class RPGApplication extends Application
 {
@@ -15,46 +16,36 @@ public class RPGApplication extends Application
     {
         super.onCreate();
         
-        Log.d(TAG, "RPGApplication onCreate() pozvano!");
+        Log.d(TAG, "RPGApplication onCreate() - Simple Firebase initialization");
 
         try
         {
-            // Initialize Firebase with default configuration
+            // Simple Firebase initialization using google-services.json
             if (FirebaseApp.getApps(this).isEmpty()) {
                 FirebaseApp.initializeApp(this);
-                Log.d(TAG, "Firebase uspešno inicijalizovan!");
-            } else {
-                Log.d(TAG, "Firebase već inicijalizovan!");
+                Log.d(TAG, "Firebase initialized successfully");
             }
 
-            // Initialize Firebase Auth
+            // Configure Firebase Auth to disable verification (this helps with Google Play Services issues)
             FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
-
-            // Disable app verification for development - multiple approaches
             try {
                 firebaseAuth.getFirebaseAuthSettings().setAppVerificationDisabledForTesting(true);
-                Log.d(TAG, "App verification disabled successfully");
+                Log.d(TAG, "App verification disabled");
             } catch (Exception e) {
                 Log.w(TAG, "Could not disable app verification: " + e.getMessage());
             }
 
-            // Additional approach: Set auth emulator for development (optional)
-            try {
-                // Only for local development - comment out for production
-                // firebaseAuth.useEmulator("10.0.2.2", 9099);
-                Log.d(TAG, "Firebase Auth configured for development");
-            } catch (Exception e) {
-                Log.w(TAG, "Auth emulator setup failed: " + e.getMessage());
-            }
-
-            // Initialize Firestore
+            // Simple Firestore configuration
             FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+            FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                .build();
+            firestore.setFirestoreSettings(settings);
 
-            Log.d(TAG, "Firebase komponente uspešno inicijalizovane sa disabled app verification");
+            Log.d(TAG, "Firebase configured successfully");
         }
         catch (Exception e)
         {
-            Log.e(TAG, "Greška pri inicijalizaciji Firebase: " + e.getMessage(), e);
+            Log.e(TAG, "Error initializing Firebase: " + e.getMessage(), e);
         }
     }
 }
