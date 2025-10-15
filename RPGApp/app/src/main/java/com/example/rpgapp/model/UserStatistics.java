@@ -13,14 +13,20 @@ public class UserStatistics {
     private int longestTaskStreak;
     private int currentTaskStreak;
     private Map<String, Integer> tasksCompletedByCategory;
+    private Map<String, String> categoryNames; // categoryId -> categoryName
+    private Map<String, Integer> categoryColors; // categoryId -> color
     private Map<String, Integer> xpLast7Days;
+    private Map<String, Float> averageDifficultyOverTime; // datum -> prosečan XP
     private int specialMissionsStarted;
     private int specialMissionsCompleted;
 
     public UserStatistics()
     {
         this.tasksCompletedByCategory = new HashMap<>();
+        this.categoryNames = new HashMap<>();
+        this.categoryColors = new HashMap<>();
         this.xpLast7Days = new HashMap<>();
+        this.averageDifficultyOverTime = new HashMap<>();
     }
 
     public UserStatistics(String userId)
@@ -34,7 +40,10 @@ public class UserStatistics {
         this.longestTaskStreak = 0;
         this.currentTaskStreak = 0;
         this.tasksCompletedByCategory = new HashMap<>();
+        this.categoryNames = new HashMap<>();
+        this.categoryColors = new HashMap<>();
         this.xpLast7Days = new HashMap<>();
+        this.averageDifficultyOverTime = new HashMap<>();
         this.specialMissionsStarted = 0;
         this.specialMissionsCompleted = 0;
     }
@@ -69,8 +78,23 @@ public class UserStatistics {
         this.tasksCompletedByCategory = tasksCompletedByCategory;
     }
 
+    public Map<String, String> getCategoryNames() { return categoryNames; }
+    public void setCategoryNames(Map<String, String> categoryNames) {
+        this.categoryNames = categoryNames;
+    }
+
+    public Map<String, Integer> getCategoryColors() { return categoryColors; }
+    public void setCategoryColors(Map<String, Integer> categoryColors) {
+        this.categoryColors = categoryColors;
+    }
+
     public Map<String, Integer> getXpLast7Days() { return xpLast7Days; }
     public void setXpLast7Days(Map<String, Integer> xpLast7Days) { this.xpLast7Days = xpLast7Days; }
+
+    public Map<String, Float> getAverageDifficultyOverTime() { return averageDifficultyOverTime; }
+    public void setAverageDifficultyOverTime(Map<String, Float> averageDifficultyOverTime) {
+        this.averageDifficultyOverTime = averageDifficultyOverTime;
+    }
 
     public int getSpecialMissionsStarted() { return specialMissionsStarted; }
     public void setSpecialMissionsStarted(int specialMissionsStarted) {
@@ -99,10 +123,9 @@ public class UserStatistics {
         if (totalTasksCompleted == 0) return 0.0;
         // Calculate based on XP earned per task
         int totalXp = 0;
-        for (int xp : xpLast7Days.values()) {
+        for (Integer xp : xpLast7Days.values()) {
             totalXp += xp;
         }
         return totalTasksCompleted > 0 ? (double) totalXp / totalTasksCompleted : 0.0;
     }
 }
-

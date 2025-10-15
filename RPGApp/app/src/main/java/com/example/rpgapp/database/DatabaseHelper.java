@@ -9,7 +9,7 @@ public class DatabaseHelper extends SQLiteOpenHelper
 
     // Database info
     private static final String DATABASE_NAME = "rpg_app.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2; // Povećana verzija zbog dodavanja active_days_streak kolone
 
     // User table
     public static final String TABLE_USERS = "users";
@@ -25,6 +25,7 @@ public class DatabaseHelper extends SQLiteOpenHelper
     public static final String COLUMN_USER_EMAIL_VERIFIED = "email_verified";
     public static final String COLUMN_USER_REGISTRATION_DATE = "registration_date";
     public static final String COLUMN_USER_LAST_LOGIN = "last_login";
+    public static final String COLUMN_USER_ACTIVE_DAYS_STREAK = "active_days_streak";
 
     // Create table statements
     private static final String CREATE_USER_TABLE =
@@ -40,6 +41,7 @@ public class DatabaseHelper extends SQLiteOpenHelper
         COLUMN_USER_COINS + " INTEGER DEFAULT 0, " +
         COLUMN_USER_EMAIL_VERIFIED + " INTEGER DEFAULT 0, " +
         COLUMN_USER_REGISTRATION_DATE + " INTEGER, " +
+        COLUMN_USER_ACTIVE_DAYS_STREAK + " INTEGER DEFAULT 0," +
         COLUMN_USER_LAST_LOGIN + " INTEGER" +
         ")";
 
@@ -68,12 +70,17 @@ public class DatabaseHelper extends SQLiteOpenHelper
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion)
     {
-        if (oldVersion != newVersion)
+        if (oldVersion < 2 && newVersion >= 2)
         {
-            // Drop old tables
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
+            // Dodaj novu kolonu active_days_streak u postojeću tabelu
+            db.execSQL("ALTER TABLE " + TABLE_USERS +
+                      " ADD COLUMN " + COLUMN_USER_ACTIVE_DAYS_STREAK + " INTEGER DEFAULT 0");
+        }
 
-            // Create new tables
+        // Za sve ostale verzije, obriši i ponovo kreiraj tabele
+        if (oldVersion < newVersion && oldVersion != 1)
+        {
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
             onCreate(db);
         }
     }

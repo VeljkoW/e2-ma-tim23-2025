@@ -109,117 +109,139 @@
                     android:textColor="@color/text_primary"
                     android:layout_marginBottom="16dp"/>
 
+                <com.github.mikephil.charting.charts.PieChart
+                    android:id="@+id/pieChartTasks"
+                    android:layout_width="match_parent"
+                    android:layout_height="250dp"/>
+
+                <!-- Legend -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center">
+                    android:orientation="vertical"
+                    android:layout_marginTop="16dp">
 
-                    <!-- Donut Chart Placeholder -->
-                    <View
-                        android:id="@+id/viewDonutChart"
-                        android:layout_width="150dp"
-                        android:layout_height="150dp"
-                        android:layout_marginEnd="24dp"/>
-
-                    <!-- Legend -->
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
+                        <View
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:background="@color/success_color"
+                            android:layout_marginEnd="8dp"/>
+
+                        <TextView
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:layout_marginBottom="8dp">
+                            android:layout_weight="1"
+                            android:text="@string/tasks_completed"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"/>
 
-                            <View
-                                android:layout_width="16dp"
-                                android:layout_height="16dp"
-                                android:background="@color/success_color"
-                                android:layout_marginEnd="8dp"/>
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/tasks_completed"
-                                android:textSize="14sp"
-                                android:textColor="@color/text_primary"/>
-
-                            <TextView
-                                android:id="@+id/tvCompletedCount"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="0"
-                                android:textSize="14sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/text_primary"/>
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:id="@+id/tvCompletedCount"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:layout_marginBottom="8dp">
+                            android:text="0"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary"/>
+                    </LinearLayout>
 
-                            <View
-                                android:layout_width="16dp"
-                                android:layout_height="16dp"
-                                android:background="@color/warning_color"
-                                android:layout_marginEnd="8dp"/>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
 
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/tasks_incomplete"
-                                android:textSize="14sp"
-                                android:textColor="@color/text_primary"/>
+                        <View
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:background="@color/warning_color"
+                            android:layout_marginEnd="8dp"/>
 
-                            <TextView
-                                android:id="@+id/tvIncompleteCount"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="0"
-                                android:textSize="14sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/text_primary"/>
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
+                            android:layout_weight="1"
+                            android:text="@string/tasks_incomplete"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"/>
 
-                            <View
-                                android:layout_width="16dp"
-                                android:layout_height="16dp"
-                                android:background="@color/error_color"
-                                android:layout_marginEnd="8dp"/>
+                        <TextView
+                            android:id="@+id/tvIncompleteCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary"/>
+                    </LinearLayout>
 
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/tasks_cancelled"
-                                android:textSize="14sp"
-                                android:textColor="@color/text_primary"/>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
 
-                            <TextView
-                                android:id="@+id/tvCancelledCount"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="0"
-                                android:textSize="14sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/text_primary"/>
-                        </LinearLayout>
+                        <View
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:background="@color/error_color"
+                            android:layout_marginEnd="8dp"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/tasks_cancelled"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"/>
+
+                        <TextView
+                            android:id="@+id/tvCancelledCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <View
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:background="@color/primary_color"
+                            android:layout_marginEnd="8dp"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/tasks_created"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"/>
+
+                        <TextView
+                            android:id="@+id/tvCreatedCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary"/>
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -325,14 +347,14 @@
                     android:textColor="@color/text_primary"
                     android:layout_marginBottom="16dp"/>
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvCategoryStats"
+                <com.github.mikephil.charting.charts.BarChart
+                    android:id="@+id/barChartCategories"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="300dp"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Average Difficulty -->
+        <!-- Average Difficulty Line Chart -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -353,13 +375,14 @@
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
-                    android:layout_marginBottom="16dp"/>
+                    android:layout_marginBottom="8dp"/>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
 
                     <TextView
                         android:id="@+id/tvAverageDifficulty"
@@ -379,6 +402,11 @@
                         android:textSize="16sp"
                         android:textColor="@color/text_secondary"/>
                 </LinearLayout>
+
+                <com.github.mikephil.charting.charts.LineChart
+                    android:id="@+id/lineChartDifficulty"
+                    android:layout_width="match_parent"
+                    android:layout_height="250dp"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -405,10 +433,10 @@
                     android:textColor="@color/text_primary"
                     android:layout_marginBottom="16dp"/>
 
-                <View
-                    android:id="@+id/viewLineChart"
+                <com.github.mikephil.charting.charts.LineChart
+                    android:id="@+id/lineChartXP"
                     android:layout_width="match_parent"
-                    android:layout_height="200dp"/>
+                    android:layout_height="250dp"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -494,4 +522,3 @@
         </androidx.cardview.widget.CardView>
     </LinearLayout>
 </ScrollView>
-

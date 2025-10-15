@@ -8,6 +8,8 @@ import com.example.rpgapp.model.User;
 import com.example.rpgapp.repository.UserRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
+import java.util.Calendar;
 import java.util.Date;
 
 public class AuthService
@@ -122,9 +124,10 @@ public class AuthService
                     userRepository.getUserById(firebaseUser.getUid(), user -> {
                         if (user != null)
                         {
-                            user.setLastLogin(new Date());
-                            userRepository.updateLastLogin(user.getId());
                             saveUserSession(user.getId());
+
+                            userRepository.updateActiveDaysOnLogin(user.getId());
+
                             onComplete.onResult(new AuthResult(true, "Login success", user));
                         }
                         else
@@ -311,5 +314,6 @@ public class AuthService
         public boolean isSuccess() { return success; }
         public String getMessage() { return message; }
         public User getUser() { return user; }
+
     }
 }

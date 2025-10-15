@@ -15,6 +15,7 @@ public class User {
     private boolean isEmailVerified;
     private Date registrationDate;
     private Date lastLogin;
+    private int activeDaysStreak;
 
     public User()
     {
@@ -32,6 +33,7 @@ public class User {
         this.coins = 0;
         this.isEmailVerified = false;
         this.registrationDate = new Date();
+        this.activeDaysStreak = 0;
     }
 
     // Getters
@@ -47,6 +49,7 @@ public class User {
     public boolean isEmailVerified() { return isEmailVerified; }
     public Date getRegistrationDate() { return registrationDate; }
     public Date getLastLogin() { return lastLogin; }
+    public int getActiveDaysStreak() { return activeDaysStreak; }
 
     // Setters
     public void setId(String id) { this.id = id; }
@@ -61,6 +64,7 @@ public class User {
     public void setEmailVerified(boolean emailVerified) { isEmailVerified = emailVerified; }
     public void setRegistrationDate(Date registrationDate) { this.registrationDate = registrationDate; }
     public void setLastLogin(Date lastLogin) { this.lastLogin = lastLogin; }
+    public void setActiveDaysStreak(int activeDaysStreak) { this.activeDaysStreak = activeDaysStreak; }
 
     public void addExperiencePoints(int xp)
     {

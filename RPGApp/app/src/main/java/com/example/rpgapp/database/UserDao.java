@@ -40,6 +40,7 @@ public class UserDao
             values.put(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED, user.isEmailVerified() ? 1 : 0);
             values.put(DatabaseHelper.COLUMN_USER_REGISTRATION_DATE, user.getRegistrationDate() != null ? user.getRegistrationDate().getTime() : System.currentTimeMillis());
             values.put(DatabaseHelper.COLUMN_USER_LAST_LOGIN, user.getLastLogin() != null ? user.getLastLogin().getTime() : null);
+            values.put(DatabaseHelper.COLUMN_USER_ACTIVE_DAYS_STREAK, user.getActiveDaysStreak());
 
             Log.d("UserDao", "ContentValues prepared, executing INSERT into " + DatabaseHelper.TABLE_USERS);
             result = db.insert(DatabaseHelper.TABLE_USERS, null, values);
@@ -213,6 +214,7 @@ public class UserDao
             values.put(DatabaseHelper.COLUMN_USER_COINS, user.getCoins());
             values.put(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED, user.isEmailVerified() ? 1 : 0);
             values.put(DatabaseHelper.COLUMN_USER_LAST_LOGIN, user.getLastLogin() != null ? user.getLastLogin().getTime() : null);
+            values.put(DatabaseHelper.COLUMN_USER_ACTIVE_DAYS_STREAK, user.getActiveDaysStreak());
 
             String whereClause = DatabaseHelper.COLUMN_USER_ID + " = ?";
             String[] whereArgs = {user.getId()};
@@ -297,6 +299,13 @@ public class UserDao
         {
             long lastLogin = cursor.getLong(lastLoginColumnIndex);
             user.setLastLogin(new Date(lastLogin));
+        }
+
+        // Učitaj activeDaysStreak
+        int activeDaysStreakIndex = cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_ACTIVE_DAYS_STREAK);
+        if (!cursor.isNull(activeDaysStreakIndex))
+        {
+            user.setActiveDaysStreak(cursor.getInt(activeDaysStreakIndex));
         }
 
         return user;
