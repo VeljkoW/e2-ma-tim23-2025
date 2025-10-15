@@ -9,11 +9,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.Mission;
 import com.example.rpgapp.model.Category;
+import com.example.rpgapp.model.User;
 import com.example.rpgapp.repository.MissionRepository;
 import com.example.rpgapp.repository.CategoryRepository;
 import com.example.rpgapp.service.AuthService;
-import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -34,15 +35,15 @@ public class MissionEditActivity extends AppCompatActivity {
     private Date selectedDueDate;
     private List<Category> categories;
     private ArrayAdapter<Category> categoryAdapter;
+    private User currentUser; // Dodato za XP prikaz
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mission_creation);
 
-        MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        if (toolbar != null) {
-            setSupportActionBar(toolbar);
+        // Setup action bar
+        if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle("Edit Mission");
         }
@@ -50,7 +51,7 @@ public class MissionEditActivity extends AppCompatActivity {
         initViews();
         setupSpinners();
 
-        missionRepository = new MissionRepository(this); // Pass context
+        missionRepository = new MissionRepository(this);
         categoryRepository = new CategoryRepository();
         authService = new AuthService(this);
 
@@ -58,6 +59,7 @@ public class MissionEditActivity extends AppCompatActivity {
 
         if (missionId != null) {
             loadCategories();
+            loadUserForXPDisplay(); // Dodato za XP prikaz
         } else {
             finish();
         }
@@ -90,14 +92,7 @@ public class MissionEditActivity extends AppCompatActivity {
         spinnerRepeatUnit.setAdapter(repeatUnitAdapter);
 
         // Categories will be loaded dynamically in loadCategories()
-
-        ArrayAdapter<Mission.Difficulty> difficultyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, Mission.Difficulty.values());
-        difficultyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerDifficulty.setAdapter(difficultyAdapter);
-
-        ArrayAdapter<Mission.Importance> importanceAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, Mission.Importance.values());
-        importanceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerImportance.setAdapter(importanceAdapter);
+        // Difficulty i Importance će biti setupovani nakon učitavanja korisnika
 
         spinnerFrequency.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -111,6 +106,74 @@ public class MissionEditActivity extends AppCompatActivity {
 
         buttonSelectDueDate.setOnClickListener(v -> showDatePicker());
         buttonUpdateMission.setOnClickListener(v -> updateMission());
+    }
+
+    // Nova metoda - samo za učitavanje korisnika radi prikaza XP
+    private void loadUserForXPDisplay() {
+        FirebaseUser firebaseUser = authService.getCurrentFirebaseUser();
+        if (firebaseUser != null) {
+            FirebaseFirestore.getInstance().collection("users")
+                    .document(firebaseUser.getUid())
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        currentUser = documentSnapshot.toObject(User.class);
+                        if (currentUser != null) {
+                            setupDifficultyAndImportanceSpinners();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        setupDefaultDifficultyAndImportanceSpinners();
+                    });
+        } else {
+            setupDefaultDifficultyAndImportanceSpinners();
+        }
+    }
+
+    // Nova metoda - setup spinera sa XP prikazom
+    private void setupDifficultyAndImportanceSpinners() {
+        if (currentUser == null) {
+            setupDefaultDifficultyAndImportanceSpinners();
+            return;
+        }
+
+        // Difficulty spinner sa XP
+        ArrayAdapter<String> difficultyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item);
+        difficultyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        for (Mission.Difficulty diff : Mission.Difficulty.values()) {
+            int xp = currentUser.getXpForDifficulty(diff.name());
+            difficultyAdapter.add(diff.toString() + " (" + xp + " XP)");
+        }
+        spinnerDifficulty.setAdapter(difficultyAdapter);
+
+        // Importance spinner sa XP
+        ArrayAdapter<String> importanceAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item);
+        importanceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        for (Mission.Importance imp : Mission.Importance.values()) {
+            int xp = currentUser.getXpForImportance(imp.name());
+            importanceAdapter.add(imp.toString() + " (" + xp + " XP)");
+        }
+        spinnerImportance.setAdapter(importanceAdapter);
+
+        // Ako je misija već učitana, ponovo setuj selekciju
+        if (currentMission != null) {
+            setSpinnerSelections();
+        }
+    }
+
+    // Nova metoda - fallback ako ne može da učita korisnika
+    private void setupDefaultDifficultyAndImportanceSpinners() {
+        ArrayAdapter<Mission.Difficulty> difficultyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, Mission.Difficulty.values());
+        difficultyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerDifficulty.setAdapter(difficultyAdapter);
+
+        ArrayAdapter<Mission.Importance> importanceAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, Mission.Importance.values());
+        importanceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerImportance.setAdapter(importanceAdapter);
+
+        // Ako je misija već učitana, ponovo setuj selekciju
+        if (currentMission != null) {
+            setSpinnerSelections();
+        }
     }
 
     private void showDatePicker() {
@@ -220,23 +283,7 @@ public class MissionEditActivity extends AppCompatActivity {
             }
         }
 
-        if (currentMission.getDifficulty() != null) {
-            for (int i = 0; i < Mission.Difficulty.values().length; i++) {
-                if (Mission.Difficulty.values()[i] == currentMission.getDifficulty()) {
-                    spinnerDifficulty.setSelection(i);
-                    break;
-                }
-            }
-        }
-
-        if (currentMission.getImportance() != null) {
-            for (int i = 0; i < Mission.Importance.values().length; i++) {
-                if (Mission.Importance.values()[i] == currentMission.getImportance()) {
-                    spinnerImportance.setSelection(i);
-                    break;
-                }
-            }
-        }
+        setSpinnerSelections();
 
         // Handle repeat fields
         if (currentMission.getFrequency() == Mission.FrequencyType.REPEATING) {
@@ -262,6 +309,27 @@ public class MissionEditActivity extends AppCompatActivity {
         }
     }
 
+    // Nova metoda - izdvojena logika za setovanje difficulty i importance
+    private void setSpinnerSelections() {
+        if (currentMission.getDifficulty() != null) {
+            for (int i = 0; i < Mission.Difficulty.values().length; i++) {
+                if (Mission.Difficulty.values()[i] == currentMission.getDifficulty()) {
+                    spinnerDifficulty.setSelection(i);
+                    break;
+                }
+            }
+        }
+
+        if (currentMission.getImportance() != null) {
+            for (int i = 0; i < Mission.Importance.values().length; i++) {
+                if (Mission.Importance.values()[i] == currentMission.getImportance()) {
+                    spinnerImportance.setSelection(i);
+                    break;
+                }
+            }
+        }
+    }
+
     private void updateMission() {
         String name = editTextName.getText().toString().trim();
         String description = editTextDescription.getText().toString().trim();
@@ -284,8 +352,9 @@ public class MissionEditActivity extends AppCompatActivity {
             categoryId = selectedCategory.getId();
         }
 
-        Mission.Difficulty difficulty = (Mission.Difficulty) spinnerDifficulty.getSelectedItem();
-        Mission.Importance importance = (Mission.Importance) spinnerImportance.getSelectedItem();
+        // Uzmi difficulty i importance po poziciji (jer sada može biti String adapter sa XP)
+        Mission.Difficulty difficulty = Mission.Difficulty.values()[spinnerDifficulty.getSelectedItemPosition()];
+        Mission.Importance importance = Mission.Importance.values()[spinnerImportance.getSelectedItemPosition()];
 
         if (name.isEmpty()) {
             Toast.makeText(this, "Name is required", Toast.LENGTH_SHORT).show();
