@@ -203,6 +203,18 @@ public class UserRepository
                     user.addExperiencePoints(xpAmount);
                     Log.d(TAG, "New XP: " + user.getExperiencePoints() + " (added " + xpAmount + ")");
 
+                    int levelsBefore = user.getLevel();
+                    while (user.canLevelUp())
+                    {
+                        user.levelUp();
+                        Log.d(TAG, "LEVEL UP! User leveled up to level: " + user.getLevel() + ", Title: " + user.getTitle() + ", PP: " + user.getPowerPoints());
+                    }
+
+                    if (user.getLevel() > levelsBefore)
+                    {
+                        Log.d(TAG, "User advanced from level " + levelsBefore + " to level " + user.getLevel());
+                    }
+
                     // Update directly to Firebase only
                     firebaseRepository.updateUser(user, new AuthCallback<Boolean>() {
                         @Override
@@ -246,6 +258,18 @@ public class UserRepository
             // Add XP to user
             localUser.addExperiencePoints(xpAmount);
             Log.d(TAG, "New XP: " + localUser.getExperiencePoints() + " (added " + xpAmount + ")");
+
+            int levelsBefore = localUser.getLevel();
+            while (localUser.canLevelUp())
+            {
+                localUser.levelUp();
+                Log.d(TAG, "LEVEL UP! User leveled up to level: " + localUser.getLevel() + ", Title: " + localUser.getTitle() + ", PP: " + localUser.getPowerPoints());
+            }
+
+            if (localUser.getLevel() > levelsBefore)
+            {
+                Log.d(TAG, "User advanced from level " + levelsBefore + " to level " + localUser.getLevel());
+            }
 
             // Update local database
             int result = userDao.updateUser(localUser);
