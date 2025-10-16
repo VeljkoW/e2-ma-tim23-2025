@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -69,7 +70,9 @@
                 android:layout_height="wrap_content"
                 android:text="Create Mission"
                 android:textSize="16sp"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="8dp"
+                android:drawableLeft="@drawable/ic_badge"
+                android:drawablePadding="8dp" />
 
             <Button
                 android:id="@+id/btn_view_missions"
@@ -77,9 +80,21 @@
                 android:layout_height="wrap_content"
                 android:text="View Missions"
                 android:textSize="16sp"
-                android:layout_marginBottom="24dp" />
+                android:layout_marginBottom="24dp"
+                android:drawableLeft="@drawable/ic_list"
+                android:drawablePadding="8dp" />
 
             <!-- Categories Section -->
+
+            <Button
+                android:id="@+id/btn_calendar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Calendar"
+                android:textSize="16sp"
+                android:drawableLeft="@drawable/ic_calendar"
+                android:drawablePadding="8dp" />
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -96,7 +111,9 @@
                 android:layout_height="wrap_content"
                 android:text="Create Category"
                 android:textSize="16sp"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="8dp"
+                android:drawableLeft="@drawable/color_circle"
+                android:drawablePadding="8dp" />
 
             <Button
                 android:id="@+id/btn_view_categories"
@@ -104,7 +121,9 @@
                 android:layout_height="wrap_content"
                 android:text="View Categories"
                 android:textSize="16sp"
-                android:layout_marginBottom="24dp" />
+                android:layout_marginBottom="24dp"
+                android:drawableLeft="@drawable/ic_list"
+                android:drawablePadding="8dp" />
 
             <!-- Shop Section -->
             <Button
@@ -125,12 +144,6 @@
                 android:layout_marginTop="16dp" />
 
             <!-- Calendar Section -->
-            <Button
-                android:id="@+id/btn_calendar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Calendar"
-                android:textSize="16sp" />
 
         </LinearLayout>
     </ScrollView>

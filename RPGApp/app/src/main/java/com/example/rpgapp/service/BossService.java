@@ -25,7 +25,7 @@ public class BossService {
 
         try {
             this.bossRepository = new BossRepository();
-            this.missionRepository = new MissionRepository();
+            this.missionRepository = new MissionRepository(context);
             this.userRepository = new UserRepository(context);
             this.random = new Random();
 

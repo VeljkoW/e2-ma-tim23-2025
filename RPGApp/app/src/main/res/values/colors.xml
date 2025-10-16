@@ -32,6 +32,7 @@
 
     <!-- Boss Fight Colors -->
     <color name="boss_fight_color">#D32F2F</color>
+    <color name="boss_fight_disabled">#BDBDBD</color>
     <color name="hp_bar_color">#F44336</color>
     <color name="hp_bar_background">#FFCDD2</color>
 

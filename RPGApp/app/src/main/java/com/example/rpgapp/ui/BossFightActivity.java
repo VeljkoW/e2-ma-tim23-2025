@@ -21,8 +21,12 @@ import androidx.core.content.ContextCompat;
 
 import com.example.rpgapp.R;
 import com.example.rpgapp.model.Boss;
+import com.example.rpgapp.model.Equipment;
 import com.example.rpgapp.service.AuthService;
 import com.example.rpgapp.service.BossService;
+import com.example.rpgapp.repository.EquipmentRepository;
+
+import java.util.List;
 
 public class BossFightActivity extends AppCompatActivity {
     private static final String TAG = "BossFightActivity";
@@ -187,14 +191,14 @@ public class BossFightActivity extends AppCompatActivity {
         // Start attack animation sequence
         playAttackAttemptAnimation();
 
-        // Get user's actual power points for damage calculation
+        // Get user's actual power points and apply equipment bonuses
         authService.getCurrentUser(user -> {
             if (user != null) {
-                int userPowerPoints = user.getPowerPoints();
-                Log.d(TAG, "Using user's power points for damage: " + userPowerPoints);
+                int basePowerPoints = user.getPowerPoints();
+                Log.d(TAG, "Base user power points: " + basePowerPoints);
 
-                // Perform the attack with user's actual power points
-                performAttack(userId, userPowerPoints);
+                // Load equipped equipment and apply bonuses
+                loadEquippedEquipmentAndAttack(userId, basePowerPoints);
             } else {
                 Log.e(TAG, "Failed to get current user for power points");
                 Toast.makeText(this, "Failed to get user stats", Toast.LENGTH_SHORT).show();
@@ -203,8 +207,74 @@ public class BossFightActivity extends AppCompatActivity {
         });
     }
 
-    private void performAttack(String userId, int userPowerPoints) {
-        bossService.attackBoss(bossId, userId, userPowerPoints)
+    private void loadEquippedEquipmentAndAttack(String userId, int basePowerPoints) {
+        EquipmentRepository equipmentRepository = new EquipmentRepository();
+
+        // Load all user equipment
+        equipmentRepository.getEquipmentList(
+            equipmentRepository.getUserEquipment(userId),
+            new EquipmentRepository.EquipmentCallback<List<Equipment>>() {
+                @Override
+                public void onSuccess(List<Equipment> equipmentList) {
+                    // Calculate equipment bonuses
+                    EquipmentBonuses bonuses = calculateEquipmentBonuses(equipmentList);
+
+                    // Apply bonuses to user stats
+                    int totalPowerPoints = basePowerPoints + bonuses.powerBonus;
+
+                    // Apply dodge reduction to boss (reduce dodge chance by extra attack chance)
+                    double modifiedBossDodgeChance = Math.max(0, currentBoss.getChanceTododge() - (bonuses.extraAttackChance / 100.0));
+
+                    // Apply coin bonus to rewards
+                    int totalCoinReward = currentBoss.getCoinReward() + bonuses.coinBonus;
+
+                    Log.d(TAG, "Equipment bonuses applied - Power: +" + bonuses.powerBonus +
+                              ", Extra Attack: +" + bonuses.extraAttackChance + "%" +
+                              ", Coin Bonus: +" + bonuses.coinBonus);
+                    Log.d(TAG, "Total power points: " + totalPowerPoints);
+                    Log.d(TAG, "Boss dodge chance reduced from " + (currentBoss.getChanceTododge() * 100) +
+                              "% to " + (modifiedBossDodgeChance * 100) + "%");
+                    Log.d(TAG, "Total coin reward: " + totalCoinReward);
+
+                    // Perform the attack with enhanced stats
+                    performEnhancedAttack(userId, totalPowerPoints, modifiedBossDodgeChance, totalCoinReward, bonuses);
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Log.w(TAG, "Failed to load equipment, proceeding with base stats: " + e.getMessage());
+                    // Proceed with base stats if equipment loading fails
+                    performAttack(userId, basePowerPoints);
+                }
+            });
+    }
+
+    private EquipmentBonuses calculateEquipmentBonuses(List<Equipment> equipmentList) {
+        EquipmentBonuses bonuses = new EquipmentBonuses();
+
+        for (Equipment equipment : equipmentList) {
+            if (equipment.isEquipped() && equipment.canBeUsed()) {
+                bonuses.powerBonus += equipment.getPowerBonus();
+                bonuses.extraAttackChance += equipment.getExtraAttackChance();
+                bonuses.coinBonus += equipment.getCoinBonus();
+
+                Log.d(TAG, "Applied bonus from " + equipment.getName() +
+                          " - Power: +" + equipment.getPowerBonus() +
+                          ", Extra Attack: +" + equipment.getExtraAttackChance() + "%" +
+                          ", Coin: +" + equipment.getCoinBonus());
+            }
+        }
+
+        return bonuses;
+    }
+
+    private void performEnhancedAttack(String userId, int totalPowerPoints, double modifiedBossDodgeChance, int totalCoinReward, EquipmentBonuses bonuses) {
+        // Here you would implement the logic to perform the attack using the enhanced stats
+        // For example, you might want to call a method on bossService to handle the attack logic
+        // Make sure to update the currentBoss object with the new state after the attack
+
+        // Placeholder for attack logic - remove or replace with actual implementation
+        bossService.attackBoss(bossId, userId, totalPowerPoints)
                 .addOnSuccessListener(result -> {
                     // Update current boss with result
                     currentBoss = result.getBoss();
@@ -401,5 +471,12 @@ public class BossFightActivity extends AppCompatActivity {
                 finish(); // Return to main activity after defeat
             }, 3000);
         }
+    }
+
+    // Helper class to store equipment bonuses
+    private static class EquipmentBonuses {
+        int powerBonus = 0;
+        int extraAttackChance = 0;
+        int coinBonus = 0;
     }
 }
