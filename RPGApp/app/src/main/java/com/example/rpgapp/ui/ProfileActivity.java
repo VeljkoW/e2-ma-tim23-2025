@@ -3,6 +3,7 @@ package com.example.rpgapp.ui;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -15,23 +16,33 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.rpgapp.R;
+import com.example.rpgapp.adapter.EquipmentAdapter;
+import com.example.rpgapp.model.Equipment;
 import com.example.rpgapp.model.User;
+import com.example.rpgapp.repository.EquipmentRepository;
 import com.example.rpgapp.service.AuthService;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.common.BitMatrix;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ProfileActivity extends AppCompatActivity
 {
+    private static final String TAG = "ProfileActivity";
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private AuthService authService;
+    private EquipmentRepository equipmentRepository;
     private User currentUser;
 
     private ImageView ivAvatar, ivQRCode;
@@ -41,6 +52,8 @@ public class ProfileActivity extends AppCompatActivity
     private ImageButton btnBack, btnViewStatistics;
     private RecyclerView rvBadges, rvEquipment;
 
+    private EquipmentAdapter equipmentAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,6 +62,7 @@ public class ProfileActivity extends AppCompatActivity
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
         authService = new AuthService(this);
+        equipmentRepository = new EquipmentRepository();
 
         initViews();
         setupRecyclerViews();
@@ -77,15 +91,16 @@ public class ProfileActivity extends AppCompatActivity
 
     private void setupRecyclerViews()
     {
-
         rvBadges.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-
         rvBadges.setAdapter(new EmptyAdapter());
 
-
+        // Setup equipment RecyclerView with new adapter
         rvEquipment.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-
-        rvEquipment.setAdapter(new EmptyAdapter());
+        equipmentAdapter = new EquipmentAdapter(equipment -> {
+            // Show equipment details when clicked
+            showEquipmentDetails(equipment);
+        });
+        rvEquipment.setAdapter(equipmentAdapter);
     }
 
     private void loadUserProfile() {
@@ -103,11 +118,36 @@ public class ProfileActivity extends AppCompatActivity
                         if (currentUser != null) {
                             displayUserProfile();
                             generateQRCode(userId);
+                            loadUserEquipment(userId);
                         }
                     }
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Failed to load profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void loadUserEquipment(String userId) {
+        Log.d(TAG, "Loading equipment for user: " + userId);
+        equipmentRepository.getUserEquipment(userId)
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Equipment> equipmentList = new ArrayList<>();
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        Equipment equipment = doc.toObject(Equipment.class);
+                        if (equipment != null) {
+                            equipmentList.add(equipment);
+                        }
+                    }
+                    Log.d(TAG, "Equipment loaded successfully: " + equipmentList.size() + " items");
+                    if (!equipmentList.isEmpty()) {
+                        equipmentAdapter.setEquipmentList(equipmentList);
+                    } else {
+                        Log.d(TAG, "No equipment found for user");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to load equipment", e);
+                    Toast.makeText(ProfileActivity.this, "Failed to load equipment", Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -256,6 +296,41 @@ public class ProfileActivity extends AppCompatActivity
                 Toast.makeText(this, result.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void showEquipmentDetails(Equipment equipment) {
+        StringBuilder details = new StringBuilder();
+        details.append("Name: ").append(equipment.getName()).append("\n\n");
+        details.append("Type: ").append(equipment.getType().name()).append("\n");
+
+        if (equipment.getPowerBonus() > 0) {
+            details.append("Power Bonus: +").append(equipment.getPowerBonus()).append("%\n");
+        }
+        if (equipment.getAttackChanceBonus() > 0) {
+            details.append("Attack Chance: +").append(equipment.getAttackChanceBonus()).append("%\n");
+        }
+        if (equipment.getExtraAttackChance() > 0) {
+            details.append("Extra Attack Chance: +").append(equipment.getExtraAttackChance()).append("%\n");
+        }
+        if (equipment.getCoinBonus() > 0) {
+            details.append("Coin Bonus: +").append(equipment.getCoinBonus()).append("%\n");
+        }
+
+        if (equipment.getType() == Equipment.EquipmentType.CLOTHING) {
+            details.append("\nRemaining Battles: ").append(equipment.getRemainingBattles());
+        }
+
+        if (equipment.isActive()) {
+            details.append("\n\nStatus: Active");
+        } else if (equipment.isEquipped()) {
+            details.append("\n\nStatus: Equipped");
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Equipment Details")
+                .setMessage(details.toString())
+                .setPositiveButton("OK", null)
+                .show();
     }
 
     private static class EmptyAdapter extends RecyclerView.Adapter<EmptyAdapter.EmptyViewHolder>

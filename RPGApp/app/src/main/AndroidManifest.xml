@@ -98,6 +98,18 @@
             android:exported="false"
             android:theme="@style/Theme.RPGApp" />
 
+        <!-- Shop Activity -->
+        <activity
+            android:name=".ui.ShopActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Equipment Management Activity -->
+        <activity
+            android:name=".ui.EquipmentManagementActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
     </application>
 
 </manifest>

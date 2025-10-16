@@ -72,25 +72,16 @@ public class DatabaseHelper extends SQLiteOpenHelper
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion)
     {
-        if (oldVersion < 2 && newVersion >= 2)
+        if (oldVersion < 2)
         {
-            // Dodaj novu kolonu active_days_streak u postojeću tabelu
             db.execSQL("ALTER TABLE " + TABLE_USERS +
                       " ADD COLUMN " + COLUMN_USER_ACTIVE_DAYS_STREAK + " INTEGER DEFAULT 0");
         }
 
-        if (oldVersion < 3 && newVersion >= 3)
+        if (oldVersion < 3)
         {
-            // Dodaj novu kolonu last_activity_day_update u postojeću tabelu
             db.execSQL("ALTER TABLE " + TABLE_USERS +
                       " ADD COLUMN " + COLUMN_USER_LAST_ACTIVITY_DAY_UPDATE + " INTEGER");
-        }
-
-        // Za sve ostale verzije, obriši i ponovo kreiraj tabele
-        if (oldVersion < newVersion && oldVersion != 1)
-        {
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
-            onCreate(db);
         }
     }
 
