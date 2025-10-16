@@ -1,7 +1,5 @@
 package com.example.rpgapp.model;
 
-import androidx.annotation.ColorInt;
-
 public class Mission {
     public enum FrequencyType {
         ONCE,
@@ -32,50 +30,98 @@ public class Mission {
     }
 
     public enum Difficulty {
-        VERY_EASY(1),
-        EASY(3),
-        HARD(7),
-        EXTREMELY_HARD(20);
-
-        public final int xp;
-
-        Difficulty(int xp) {
-            this.xp = xp;
-        }
+        VERY_EASY,
+        EASY,
+        HARD,
+        EXTREMELY_HARD;
 
         @Override
         public String toString() {
             switch (this) {
-                case VERY_EASY: return "Very Easy (1xp)";
-                case EASY: return "Easy (3xp)";
-                case HARD: return "Hard (7xp)";
-                case EXTREMELY_HARD: return "Extremely Hard (20xp)";
+                case VERY_EASY: return "Very Easy";
+                case EASY: return "Easy";
+                case HARD: return "Hard";
+                case EXTREMELY_HARD: return "Extremely Hard";
                 default: return super.toString();
             }
+        }
+
+        public String toStringWithXP(int userLevel) {
+            int xp = getXpForLevel(userLevel);
+            switch (this) {
+                case VERY_EASY: return "Very Easy (" + xp + "xp)";
+                case EASY: return "Easy (" + xp + "xp)";
+                case HARD: return "Hard (" + xp + "xp)";
+                case EXTREMELY_HARD: return "Extremely Hard (" + xp + "xp)";
+                default: return super.toString();
+            }
+        }
+
+        public int getXpForLevel(int userLevel) {
+            int baseXp;
+            switch (this) {
+                case VERY_EASY: baseXp = 1; break;
+                case EASY: baseXp = 3; break;
+                case HARD: baseXp = 7; break;
+                case EXTREMELY_HARD: baseXp = 20; break;
+                default: baseXp = 1;
+            }
+
+            if (userLevel <= 1) return baseXp;
+
+            int xp = baseXp;
+            for (int i = 2; i <= userLevel; i++) {
+                xp = (int) Math.round(xp + xp / 2.0);
+            }
+            return xp;
         }
     }
 
     public enum Importance {
-        NORMAL(1),
-        IMPORTANT(3),
-        EXTREMELY_IMPORTANT(7),
-        SPECIAL(20);
-
-        public final int xp;
-
-        Importance(int xp) {
-            this.xp = xp;
-        }
+        NORMAL,
+        IMPORTANT,
+        EXTREMELY_IMPORTANT,
+        SPECIAL;
 
         @Override
         public String toString() {
             switch (this) {
-                case NORMAL: return "Normal (1xp)";
-                case IMPORTANT: return "Important (3xp)";
-                case EXTREMELY_IMPORTANT: return "Extremely Important (7xp)";
-                case SPECIAL: return "Special (20xp)";
+                case NORMAL: return "Normal";
+                case IMPORTANT: return "Important";
+                case EXTREMELY_IMPORTANT: return "Extremely Important";
+                case SPECIAL: return "Special";
                 default: return super.toString();
             }
+        }
+
+        public String toStringWithXP(int userLevel) {
+            int xp = getXpForLevel(userLevel);
+            switch (this) {
+                case NORMAL: return "Normal (" + xp + "xp)";
+                case IMPORTANT: return "Important (" + xp + "xp)";
+                case EXTREMELY_IMPORTANT: return "Extremely Important (" + xp + "xp)";
+                case SPECIAL: return "Special (" + xp + "xp)";
+                default: return super.toString();
+            }
+        }
+
+        public int getXpForLevel(int userLevel) {
+            int baseXp;
+            switch (this) {
+                case NORMAL: baseXp = 1; break;
+                case IMPORTANT: baseXp = 3; break;
+                case EXTREMELY_IMPORTANT: baseXp = 10; break;
+                case SPECIAL: baseXp = 100; break;
+                default: baseXp = 1;
+            }
+
+            if (userLevel <= 1) return baseXp;
+
+            int xp = baseXp;
+            for (int i = 2; i <= userLevel; i++) {
+                xp = (int) Math.round(xp + xp / 2.0);
+            }
+            return xp;
         }
     }
 
@@ -99,27 +145,28 @@ public class Mission {
     private String userId;
     private Status status;
     private int totalXP;
+    private int userLevel; // Dodato: nivo korisnika u trenutku kreiranja misije
     private java.util.Date createDateTime;
     private java.util.Date finalizationDateTime;
     private java.util.Date dueDateTime; // When mission should be completed (single) or when repeating should stop
 
-    public Mission(String id, String name, String description, FrequencyType frequency, Integer repeatInterval, RepeatUnit repeatUnit, String categoryId, Difficulty difficulty, Importance importance, String userId, java.util.Date dueDateTime) {
+    public Mission(String id, String name, String description, FrequencyType frequency, Integer repeatInterval, RepeatUnit repeatUnit, String categoryId, Difficulty difficulty, Importance importance, String userId, int userLevel, java.util.Date dueDateTime) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.frequency = frequency;
         this.repeatInterval = repeatInterval;
         this.repeatUnit = repeatUnit;
-        this.categoryId = categoryId; // Changed from category to categoryId
+        this.categoryId = categoryId;
         this.difficulty = difficulty;
         this.importance = importance;
         this.userId = userId;
+        this.userLevel = userLevel;
         this.dueDateTime = dueDateTime;
         this.status = Status.ACTIVE;
         this.createDateTime = new java.util.Date();
         this.finalizationDateTime = null;
-        // XP will be calculated separately via calculateTotalXP method
-        this.totalXP = (difficulty != null ? difficulty.xp : 0) + (importance != null ? importance.xp : 0);
+        this.totalXP = 0; // Biće izračunat preko calculateTotalXPForLevel
     }
 
     // Required for Firestore serialization
@@ -171,9 +218,11 @@ public class Mission {
     public java.util.Date getDueDateTime() { return dueDateTime; }
     public void setDueDateTime(java.util.Date dueDateTime) { this.dueDateTime = dueDateTime; }
 
+    public int getUserLevel() { return userLevel; }
+    public void setUserLevel(int userLevel) { this.userLevel = userLevel; }
+
     /**
-     * Calculates total XP based on difficulty, importance, and daily limits.
-     * This should be called after checking existing missions for the day.
+     * Calculates total XP based on difficulty, importance, user level, and daily limits.
      */
     public int calculateTotalXP(int veryEasyNormalCount, int easyImportantCount, int hardExtremelyImportantCount, int specialCount) {
         if (difficulty == null || importance == null) {
@@ -202,8 +251,22 @@ public class Mission {
             return 0;
         }
 
-        // If no limits exceeded, return normal XP
-        return difficulty.xp + importance.xp;
+        // Calculate XP based on user level
+        return calculateTotalXPForLevel(userLevel);
+    }
+
+    /**
+     * Calculates total XP for a specific user level (difficulty + importance XP).
+     */
+    public int calculateTotalXPForLevel(int level) {
+        if (difficulty == null || importance == null) {
+            return 0;
+        }
+
+        int difficultyXp = difficulty.getXpForLevel(level);
+        int importanceXp = importance.getXpForLevel(level);
+
+        return difficultyXp + importanceXp;
     }
 
     /**

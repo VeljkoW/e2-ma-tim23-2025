@@ -15,6 +15,8 @@ public class User {
     private boolean isEmailVerified;
     private Date registrationDate;
     private Date lastLogin;
+    private int activeDaysStreak;
+    private Date lastActivityDayUpdate; // Novi field za pracenje activity days
 
     public User()
     {
@@ -25,13 +27,15 @@ public class User {
         this.email = email;
         this.username = username;
         this.avatarId = avatarId;
-        this.level = 0;
+        this.level = 1;
         this.title = "Crook"; // Starting title
         this.powerPoints = 0;
         this.experiencePoints = 0;
         this.coins = 0;
         this.isEmailVerified = false;
         this.registrationDate = new Date();
+        this.activeDaysStreak = 0;
+        this.lastActivityDayUpdate = null;
     }
 
     // Getters
@@ -47,6 +51,8 @@ public class User {
     public boolean isEmailVerified() { return isEmailVerified; }
     public Date getRegistrationDate() { return registrationDate; }
     public Date getLastLogin() { return lastLogin; }
+    public int getActiveDaysStreak() { return activeDaysStreak; }
+    public Date getLastActivityDayUpdate() { return lastActivityDayUpdate; }
 
     // Setters
     public void setId(String id) { this.id = id; }
@@ -61,6 +67,8 @@ public class User {
     public void setEmailVerified(boolean emailVerified) { isEmailVerified = emailVerified; }
     public void setRegistrationDate(Date registrationDate) { this.registrationDate = registrationDate; }
     public void setLastLogin(Date lastLogin) { this.lastLogin = lastLogin; }
+    public void setActiveDaysStreak(int activeDaysStreak) { this.activeDaysStreak = activeDaysStreak; }
+    public void setLastActivityDayUpdate(Date lastActivityDayUpdate) { this.lastActivityDayUpdate = lastActivityDayUpdate; }
 
     public void addExperiencePoints(int xp)
     {
@@ -77,27 +85,185 @@ public class User {
         this.powerPoints += pp;
     }
 
+    public boolean canLevelUp()
+    {
+        int requiredXp = getXpForNextLevel();
+        return experiencePoints >= requiredXp;
+    }
+
+    public boolean levelUp()
+    {
+        if (!canLevelUp())
+        {
+            return false;
+        }
+
+        int requiredXp = getXpForNextLevel();
+
+        this.experiencePoints -= requiredXp;
+
+        this.level++;
+
+        int ppToAdd = calculatePPForLevelUp(this.level);
+        this.powerPoints += ppToAdd;
+
+        this.title = getTitleForLevel(this.level);
+
+        return true;
+    }
+
+    private int calculatePPForLevelUp(int newLevel)
+    {
+        if (newLevel <= 1)
+            return 0;
+        if (newLevel == 2)
+            return 40;
+
+        int previousPP = 40;
+        for (int i = 3; i <= newLevel; i++)
+        {
+            previousPP = (int) Math.round(previousPP + (3.0 / 4.0) * previousPP);
+        }
+        return previousPP;
+    }
+
+    private String getTitleForLevel(int level)
+    {
+        if (level >= 100)
+            return "Mafia Boss";
+        else if(level >= 75)
+            return "Don";
+        else if (level >= 50)
+            return "Boss";
+        else if (level >= 30)
+            return "Underboss";
+        else if (level >= 25)
+            return "Capo";
+        else if (level >= 20)
+            return "Soldier";
+        else if (level >= 15)
+            return "Associate";
+        else if (level >= 10)
+            return "Hitman";
+        else if (level >= 5)
+            return "Thug";
+        else
+            return "Crook";
+    }
+
     public int getXpForNextLevel()
     {
-        if (level == 0) return 200;
-
-        int previousLevelXp = getXpForLevel(level);
+        // XP potreban da se pređe sa trenutnog nivoa na sledeći
+        if (level == 1)
+            return 200;
+        int previousLevelXp = getXpRequiredForLevel(level);
         return (int) Math.ceil((previousLevelXp * 2 + previousLevelXp / 2.0) / 100.0) * 100;
     }
 
-    private int getXpForLevel(int level)
+
+    private int getXpRequiredForLevel(int targetLevel)
     {
-        if (level <= 1) return 200;
+        if (targetLevel <= 1)
+            return 0;
+
+        if (targetLevel == 2)
+            return 200;
 
         int xp = 200;
-        for (int i = 2; i <= level; i++) {
+        for (int i = 3; i <= targetLevel; i++)
+        {
             xp = (int) Math.ceil((xp * 2 + xp / 2.0) / 100.0) * 100;
         }
         return xp;
     }
 
+    public int getXpForDifficulty(String difficulty)
+    {
+        int baseXp;
+        switch (difficulty.toLowerCase()) {
+            case "very_easy":
+            case "veoma lak":
+                baseXp = 1;
+                break;
+            case "easy":
+            case "lak":
+                baseXp = 3;
+                break;
+            case "hard":
+            case "težak":
+                baseXp = 7;
+                break;
+            case "extreme":
+            case "extremely_hard":
+            case "ekstremno težak":
+                baseXp = 20;
+                break;
+            default:
+                baseXp = 1;
+        }
+
+        if (level <= 1)
+            return baseXp;
+
+        int xp = baseXp;
+        for (int i = 2; i <= level; i++)
+        {
+            xp = (int) Math.round(xp + xp / 2.0);
+        }
+        return xp;
+    }
+    public int getXpForImportance(String importance)
+    {
+        int baseXp;
+        switch (importance.toLowerCase()) {
+            case "normal":
+            case "normalan":
+                baseXp = 1;
+                break;
+            case "important":
+            case "važan":
+                baseXp = 3;
+                break;
+            case "very_important":
+            case "ekstremno važan":
+            case "extremely_important":
+                baseXp = 10;
+                break;
+            case "special":
+            case "specijalan":
+                baseXp = 100;
+                break;
+            default:
+                baseXp = 1;
+        }
+
+        if (level <= 1)
+            return baseXp;
+
+        int xp = baseXp;
+        for (int i = 2; i <= level; i++)
+        {
+            xp = (int) Math.round(xp + xp / 2.0);
+        }
+        return xp;
+    }
+
+    public int calculateMissionXP(Mission.Difficulty difficulty, Mission.Importance importance)
+    {
+        if (difficulty == null || importance == null)
+        {
+            return 0;
+        }
+
+        int difficultyXp = getXpForDifficulty(difficulty.name());
+        int importanceXp = getXpForImportance(importance.name());
+
+        return difficultyXp + importanceXp;
+    }
+
     @Override
-    public String toString() {
+    public String toString()
+    {
         return "User{" +
                 "id='" + id + '\'' +
                 ", email='" + email + '\'' +

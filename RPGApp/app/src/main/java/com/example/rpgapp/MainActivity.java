@@ -22,6 +22,7 @@ import com.example.rpgapp.ui.CalendarActivity;
 import com.example.rpgapp.ui.CategoriesListActivity;
 import com.example.rpgapp.ui.CategoryCreationActivity;
 import com.example.rpgapp.ui.LoginActivity;
+import com.example.rpgapp.ui.ProfileActivity;
 import com.example.rpgapp.ui.MissionCreationActivity;
 import com.example.rpgapp.ui.MissionsListActivity;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -65,14 +66,13 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+
         // Welcome user
-        authService.getCurrentUser(new AuthCallback<User>() {
+        authService.getCurrentUser(new AuthCallback<>() {
             @Override
             public void onResult(User user) {
                 if (user != null) {
-                    runOnUiThread(() -> {
-                        Toast.makeText(MainActivity.this, "Welcome, " + user.getUsername() + "!", Toast.LENGTH_SHORT).show();
-                    });
+                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "Welcome, " + user.getUsername() + "!", Toast.LENGTH_SHORT).show());
                 }
             }
         });
@@ -132,6 +132,27 @@ public class MainActivity extends AppCompatActivity {
                     Log.e(TAG, "Failed to get boss", e);
                     Toast.makeText(this, "Failed to load boss: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+        // Add listener for Create Category button
+        findViewById(R.id.btn_create_category).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.CategoryCreationActivity.class);
+            startActivity(intent);
+        });
+
+        // Add listener for View Categories button
+        findViewById(R.id.btn_view_categories).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.CategoriesListActivity.class);
+            startActivity(intent);
+        });
+
+        findViewById(R.id.buttonShop).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.ShopActivity.class);
+            startActivity(intent);
+        });
+
+        findViewById(R.id.buttonEquipment).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.EquipmentManagementActivity.class);
+            startActivity(intent);
+        });
     }
 
     @Override
@@ -150,6 +171,12 @@ public class MainActivity extends AppCompatActivity {
                         startActivity(new Intent(MainActivity.this, LoginActivity.class));
                         finish();
                     });
+            return true;
+        }
+        else if (id == R.id.action_profile)
+        {
+            Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+            startActivity(intent);
             return true;
         }
 
