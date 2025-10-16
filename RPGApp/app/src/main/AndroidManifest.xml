@@ -110,6 +110,12 @@
             android:exported="false"
             android:theme="@style/Theme.RPGApp.NoActionBar" />
 
+        <!-- Friends Activity -->
+        <activity
+            android:name=".ui.FriendsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
     </application>
 
 </manifest>

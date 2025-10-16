@@ -125,10 +125,23 @@ public class AuthService
                         if (user != null)
                         {
                             saveUserSession(user.getId());
-
                             userRepository.updateActiveDaysOnLogin(user.getId());
 
-                            onComplete.onResult(new AuthResult(true, "Login success", user));
+                            // Ako korisnik nije aktivan (prvi login), aktiviraj ga
+                            if (!user.isActive()) {
+                                Log.d(TAG, "First login detected, activating user: " + user.getUsername());
+                                userRepository.activateUser(user.getId(), activationSuccess -> {
+                                    if (activationSuccess) {
+                                        Log.d(TAG, "User activated successfully");
+                                        user.setActive(true); // Ažuriraj lokalni objekat
+                                    } else {
+                                        Log.e(TAG, "Failed to activate user");
+                                    }
+                                    onComplete.onResult(new AuthResult(true, "Login success", user));
+                                });
+                            } else {
+                                onComplete.onResult(new AuthResult(true, "Login success", user));
+                            }
                         }
                         else
                         {

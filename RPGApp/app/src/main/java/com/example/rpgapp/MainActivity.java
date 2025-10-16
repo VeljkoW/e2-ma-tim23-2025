@@ -94,6 +94,11 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.EquipmentManagementActivity.class);
             startActivity(intent);
         });
+
+        findViewById(R.id.buttonFriends).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.FriendsActivity.class);
+            startActivity(intent);
+        });
     }
 
     @Override
