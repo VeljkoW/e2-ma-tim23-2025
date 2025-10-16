@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -38,19 +39,23 @@ import java.util.List;
 public class ProfileActivity extends AppCompatActivity
 {
     private static final String TAG = "ProfileActivity";
+    public static final String EXTRA_USER_ID = "USER_ID";
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private AuthService authService;
     private EquipmentRepository equipmentRepository;
     private User currentUser;
+    private String viewedUserId; // ID of the user being viewed
+    private boolean isOwnProfile; // Whether viewing own profile
 
     private ImageView ivAvatar, ivQRCode;
-    private TextView tvUsername, tvLevel, tvTitle, tvXPProgress, tvPowerPoints, tvCoins, tvBadgeCount;
+    private TextView tvUsername, tvLevel, tvTitle, tvXPProgress, tvPowerPoints, tvCoins, tvBadgeCount, tvQRCodeTitle;
     private ProgressBar progressXP;
     private MaterialButton btnChangePassword, btnLogout;
     private ImageButton btnBack, btnViewStatistics;
     private RecyclerView rvBadges, rvEquipment;
+    private View statsGrid;
 
     private EquipmentAdapter equipmentAdapter;
 
@@ -64,10 +69,27 @@ public class ProfileActivity extends AppCompatActivity
         authService = new AuthService(this);
         equipmentRepository = new EquipmentRepository();
 
+        // Check if viewing another user's profile
+        viewedUserId = getIntent().getStringExtra(EXTRA_USER_ID);
+        String currentUserId = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
+
+        if (viewedUserId == null) {
+            viewedUserId = currentUserId; // View own profile by default
+        }
+
+        isOwnProfile = currentUserId != null && currentUserId.equals(viewedUserId);
+
         initViews();
         setupRecyclerViews();
         loadUserProfile();
-        setupClickListeners();
+
+        // Only setup click listeners if viewing own profile
+        if (isOwnProfile) {
+            setupClickListeners();
+        }
+
+        // Hide private elements if viewing another user's profile
+        updateUIForProfileType();
     }
 
     private void initViews() {
@@ -80,6 +102,7 @@ public class ProfileActivity extends AppCompatActivity
         tvPowerPoints = findViewById(R.id.tvPowerPoints);
         tvCoins = findViewById(R.id.tvCoins);
         tvBadgeCount = findViewById(R.id.tvBadgeCount);
+        tvQRCodeTitle = findViewById(R.id.tvQRCodeTitle);
         progressXP = findViewById(R.id.progressXP);
         btnChangePassword = findViewById(R.id.btnChangePassword);
         btnLogout = findViewById(R.id.btnLogout);
@@ -87,6 +110,7 @@ public class ProfileActivity extends AppCompatActivity
         btnViewStatistics = findViewById(R.id.btnViewStatistics);
         rvBadges = findViewById(R.id.rvBadges);
         rvEquipment = findViewById(R.id.rvEquipment);
+        statsGrid = findViewById(R.id.statsGrid);
     }
 
     private void setupRecyclerViews()
@@ -104,21 +128,21 @@ public class ProfileActivity extends AppCompatActivity
     }
 
     private void loadUserProfile() {
-        FirebaseUser firebaseUser = mAuth.getCurrentUser();
-        if (firebaseUser == null) {
+        if (viewedUserId == null) {
             finish();
             return;
         }
 
-        String userId = firebaseUser.getUid();
-        db.collection("users").document(userId).get()
+        db.collection("users").document(viewedUserId).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
                         currentUser = documentSnapshot.toObject(User.class);
                         if (currentUser != null) {
                             displayUserProfile();
-                            generateQRCode(userId);
-                            loadUserEquipment(userId);
+                            generateQRCode(viewedUserId);
+                            loadUserEquipment(viewedUserId);
+                            // Update UI after user data is loaded so we can use username in QR title
+                            updateUIForProfileType();
                         }
                     }
                 })
@@ -134,7 +158,8 @@ public class ProfileActivity extends AppCompatActivity
                     List<Equipment> equipmentList = new ArrayList<>();
                     for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
                         Equipment equipment = doc.toObject(Equipment.class);
-                        if (equipment != null) {
+                        // Only show active/equipped equipment if viewing another user's profile
+                        if (equipment != null && (isOwnProfile || equipment.isActive() || equipment.isEquipped())) {
                             equipmentList.add(equipment);
                         }
                     }
@@ -156,15 +181,24 @@ public class ProfileActivity extends AppCompatActivity
         tvUsername.setText(currentUser.getUsername());
         tvLevel.setText("Level " + currentUser.getLevel());
         tvTitle.setText(currentUser.getTitle());
-        tvPowerPoints.setText(String.valueOf(currentUser.getPowerPoints()));
-        tvCoins.setText(String.valueOf(currentUser.getCoins()));
 
-        // XP Progress
+        // XP Progress - show for all users
         int currentXP = currentUser.getExperiencePoints();
         int requiredXP = currentUser.getXpForNextLevel();
         progressXP.setMax(requiredXP);
         progressXP.setProgress(currentXP);
-        tvXPProgress.setText(currentXP + " / " + requiredXP + " XP");
+
+        if (isOwnProfile) {
+            // Show all data for own profile
+            tvPowerPoints.setText(String.valueOf(currentUser.getPowerPoints()));
+            tvCoins.setText(String.valueOf(currentUser.getCoins()));
+            tvXPProgress.setText(currentXP + " / " + requiredXP + " XP");
+        } else {
+            // For other users, show XP progress but hide PP and Coins values
+            tvPowerPoints.setText("???");
+            tvCoins.setText("???");
+            tvXPProgress.setText(currentXP + " / " + requiredXP + " XP");
+        }
 
         // Load avatar
         loadAvatar(currentUser.getAvatarId());
@@ -331,6 +365,43 @@ public class ProfileActivity extends AppCompatActivity
                 .setMessage(details.toString())
                 .setPositiveButton("OK", null)
                 .show();
+    }
+
+    private void updateUIForProfileType() {
+        if (!isOwnProfile) {
+            // Hide private UI elements when viewing another user's profile
+            if (btnChangePassword != null) btnChangePassword.setVisibility(View.GONE);
+            if (btnLogout != null) btnLogout.setVisibility(View.GONE);
+            if (btnViewStatistics != null) btnViewStatistics.setVisibility(View.GONE);
+
+            // Hide entire stats grid (PP and Coins cards)
+            if (statsGrid != null) statsGrid.setVisibility(View.GONE);
+
+            // Change QR code title to show it's the user's QR code, not yours
+            if (tvQRCodeTitle != null && currentUser != null) {
+                tvQRCodeTitle.setText(currentUser.getUsername() + "'s QR Code");
+            }
+
+            // Change back button behavior
+            if (btnBack != null) {
+                btnBack.setOnClickListener(v -> finish());
+            }
+
+            // Update title
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setTitle("User Profile");
+            }
+        } else {
+            // Set title for own profile
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setTitle("My Profile");
+            }
+
+            // Make sure QR code title says "Your QR Code"
+            if (tvQRCodeTitle != null) {
+                tvQRCodeTitle.setText("Your QR Code");
+            }
+        }
     }
 
     private static class EmptyAdapter extends RecyclerView.Adapter<EmptyAdapter.EmptyViewHolder>

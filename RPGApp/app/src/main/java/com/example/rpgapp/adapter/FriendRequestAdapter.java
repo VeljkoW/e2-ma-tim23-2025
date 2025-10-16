@@ -28,6 +28,7 @@ public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestAdap
     public interface OnRequestActionListener {
         void onAcceptRequest(Friendship friendship);
         void onRejectRequest(Friendship friendship);
+        void onViewProfile(User user);
     }
 
     public FriendRequestAdapter(OnRequestActionListener listener) {
@@ -112,6 +113,13 @@ public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestAdap
             rejectButton.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onRejectRequest(friendship);
+                }
+            });
+
+            // Add click listener for viewing profile
+            itemView.setOnClickListener(v -> {
+                if (listener != null && requester != null) {
+                    listener.onViewProfile(requester);
                 }
             });
         }

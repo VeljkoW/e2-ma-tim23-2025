@@ -1,10 +1,12 @@
 package com.example.rpgapp.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,6 +38,7 @@ public class FriendsActivity extends AppCompatActivity {
     private EditText searchEditText;
     private ProgressBar progressBar;
     private TextView emptyTextView;
+    private ImageButton btnBack;
 
     private FriendsAdapter friendsAdapter;
     private FriendRequestAdapter requestAdapter;
@@ -59,7 +62,8 @@ public class FriendsActivity extends AppCompatActivity {
         setupTabLayout();
         setupSearch();
 
-        loadFriends();
+        // Set initial tab and load data
+        showFriendsTab();
     }
 
     private void initViews() {
@@ -68,6 +72,10 @@ public class FriendsActivity extends AppCompatActivity {
         searchEditText = findViewById(R.id.search_edit_text);
         progressBar = findViewById(R.id.progress_bar);
         emptyTextView = findViewById(R.id.empty_text_view);
+        btnBack = findViewById(R.id.btnBack);
+
+        // Setup back button
+        btnBack.setOnClickListener(v -> finish());
 
         // Postavi naslov
         if (getSupportActionBar() != null) {
@@ -88,8 +96,10 @@ public class FriendsActivity extends AppCompatActivity {
         friendsAdapter = new FriendsAdapter(new FriendsAdapter.OnFriendActionListener() {
             @Override
             public void onViewProfile(User friend) {
-                // TODO: Otvori profil prijatelja
-                Toast.makeText(FriendsActivity.this, "View profile: " + friend.getUsername(), Toast.LENGTH_SHORT).show();
+                // Navigate to profile activity
+                Intent intent = new Intent(FriendsActivity.this, ProfileActivity.class);
+                intent.putExtra(ProfileActivity.EXTRA_USER_ID, friend.getId());
+                startActivity(intent);
             }
 
             @Override
@@ -114,6 +124,14 @@ public class FriendsActivity extends AppCompatActivity {
             @Override
             public void onRejectRequest(Friendship friendship) {
                 rejectFriendRequest(friendship);
+            }
+
+            @Override
+            public void onViewProfile(User user) {
+                // Navigate to profile activity
+                Intent intent = new Intent(FriendsActivity.this, ProfileActivity.class);
+                intent.putExtra(ProfileActivity.EXTRA_USER_ID, user.getId());
+                startActivity(intent);
             }
         });
 
@@ -141,8 +159,10 @@ public class FriendsActivity extends AppCompatActivity {
 
             @Override
             public void onViewProfile(User user) {
-                // TODO: Otvori profil korisnika
-                Toast.makeText(FriendsActivity.this, "View profile: " + user.getUsername(), Toast.LENGTH_SHORT).show();
+                // Navigate to profile activity
+                Intent intent = new Intent(FriendsActivity.this, ProfileActivity.class);
+                intent.putExtra(ProfileActivity.EXTRA_USER_ID, user.getId());
+                startActivity(intent);
             }
         });
     }
