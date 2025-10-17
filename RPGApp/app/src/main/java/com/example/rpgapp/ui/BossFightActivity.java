@@ -3,10 +3,13 @@ package com.example.rpgapp.ui;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.BounceInterpolator;
@@ -14,6 +17,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,6 +33,7 @@ import com.example.rpgapp.service.BossService;
 import com.example.rpgapp.repository.EquipmentRepository;
 import com.example.rpgapp.repository.BossRepository;
 import com.example.rpgapp.repository.UserRepository;
+import com.example.rpgapp.util.ShakeDetector;
 
 import java.util.List;
 
@@ -68,6 +73,18 @@ public class BossFightActivity extends AppCompatActivity {
     private TextView tvDefeatMessage;
     private View vAttackFlash;
 
+    // Chest animation components
+    private RelativeLayout rlChestContainer;
+    private ImageView ivChest;
+    private TextView tvShakeInstruction;
+    private LinearLayout llRewardsContainer;
+    private TextView tvCoinRewardAmount;
+    private boolean chestOpened = false;
+
+    // Shake detection
+    private SensorManager sensorManager;
+    private ShakeDetector shakeDetector;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,6 +105,11 @@ public class BossFightActivity extends AppCompatActivity {
         initializeViews();
         setupClickListeners();
         loadBossData();
+
+        // Initialize shake detection
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        shakeDetector = new ShakeDetector();
+        shakeDetector.setOnShakeListener(this::onShakeDetected);
     }
 
     private void initializeViews() {
@@ -117,6 +139,13 @@ public class BossFightActivity extends AppCompatActivity {
         tvVictoryMessage = findViewById(R.id.tv_victory_message);
         tvDefeatMessage = findViewById(R.id.tv_defeat_message);
         vAttackFlash = findViewById(R.id.v_attack_flash);
+
+        // Chest animation components
+        rlChestContainer = findViewById(R.id.rl_chest_container);
+        ivChest = findViewById(R.id.iv_chest);
+        tvShakeInstruction = findViewById(R.id.tv_shake_instruction);
+        llRewardsContainer = findViewById(R.id.ll_rewards_container);
+        tvCoinRewardAmount = findViewById(R.id.tv_coin_reward_amount);
     }
 
     private void setupClickListeners() {
@@ -505,31 +534,8 @@ public class BossFightActivity extends AppCompatActivity {
     }
 
     private void playVictoryAnimation() {
-        if (tvVictoryMessage != null) {
-            tvVictoryMessage.setText("VICTORY!");
-            tvVictoryMessage.setVisibility(View.VISIBLE);
-            tvVictoryMessage.setAlpha(0f);
-            tvVictoryMessage.setScaleX(0.5f);
-            tvVictoryMessage.setScaleY(0.5f);
-            tvVictoryMessage.setTranslationY(200f);
-
-            // Victory animation - scale up and slide in from bottom
-            AnimatorSet victoryAnimSet = new AnimatorSet();
-            ObjectAnimator scaleUpX = ObjectAnimator.ofFloat(tvVictoryMessage, "scaleX", 0.5f, 1.2f, 1f);
-            ObjectAnimator scaleUpY = ObjectAnimator.ofFloat(tvVictoryMessage, "scaleY", 0.5f, 1.2f, 1f);
-            ObjectAnimator slideUp = ObjectAnimator.ofFloat(tvVictoryMessage, "translationY", 200f, -50f, 0f);
-            ObjectAnimator fadeIn = ObjectAnimator.ofFloat(tvVictoryMessage, "alpha", 0f, 1f);
-
-            victoryAnimSet.playTogether(scaleUpX, scaleUpY, slideUp, fadeIn);
-            victoryAnimSet.setDuration(1500);
-            victoryAnimSet.setInterpolator(new BounceInterpolator());
-            victoryAnimSet.start();
-
-            // Auto-dismiss after showing victory
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                finish(); // Return to main activity after victory
-            }, 3000);
-        }
+        // Show chest animation instead of simple victory message
+        showVictoryChest();
     }
 
     private void playDefeatAnimation() {
@@ -558,6 +564,219 @@ public class BossFightActivity extends AppCompatActivity {
                 finish(); // Return to main activity after defeat
             }, 3000);
         }
+    }
+
+    /**
+     * Shows the victory chest animation with shake-to-open functionality
+     */
+    private void showVictoryChest() {
+        if (rlChestContainer == null) return;
+
+        // Reset chest state
+        chestOpened = false;
+
+        // Set up chest UI
+        if (tvCoinRewardAmount != null) {
+            tvCoinRewardAmount.setText(String.valueOf(currentBoss.getCoinReward()));
+        }
+
+        // Show chest container with entrance animation
+        rlChestContainer.setVisibility(View.VISIBLE);
+        rlChestContainer.setAlpha(0f);
+
+        // Animate chest container fade in
+        ObjectAnimator fadeInContainer = ObjectAnimator.ofFloat(rlChestContainer, "alpha", 0f, 1f);
+        fadeInContainer.setDuration(500);
+        fadeInContainer.start();
+
+        // Animate chest entrance - scale up from small
+        if (ivChest != null) {
+            ivChest.setScaleX(0.3f);
+            ivChest.setScaleY(0.3f);
+            ivChest.setTranslationY(100f);
+
+            AnimatorSet chestEntrance = new AnimatorSet();
+            ObjectAnimator scaleUpX = ObjectAnimator.ofFloat(ivChest, "scaleX", 0.3f, 1.1f, 1f);
+            ObjectAnimator scaleUpY = ObjectAnimator.ofFloat(ivChest, "scaleY", 0.3f, 1.1f, 1f);
+            ObjectAnimator slideUp = ObjectAnimator.ofFloat(ivChest, "translationY", 100f, -20f, 0f);
+
+            chestEntrance.playTogether(scaleUpX, scaleUpY, slideUp);
+            chestEntrance.setDuration(1000);
+            chestEntrance.setInterpolator(new BounceInterpolator());
+            chestEntrance.start();
+        }
+
+        // Animate shake instruction with pulsing effect
+        if (tvShakeInstruction != null) {
+            tvShakeInstruction.setVisibility(View.VISIBLE);
+            tvShakeInstruction.setAlpha(0f);
+            tvShakeInstruction.setScaleX(0.8f);
+            tvShakeInstruction.setScaleY(0.8f);
+
+            // Delay showing shake instruction until chest settles
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                ObjectAnimator fadeInInstruction = ObjectAnimator.ofFloat(tvShakeInstruction, "alpha", 0f, 1f);
+                fadeInInstruction.setDuration(500);
+                fadeInInstruction.start();
+
+                // Start pulsing animation for shake instruction
+                startShakeInstructionPulsing();
+            }, 1200);
+        }
+
+        // Set up click listener for chest container to return to menu after chest is opened
+        rlChestContainer.setOnClickListener(v -> {
+            if (chestOpened && llRewardsContainer != null && llRewardsContainer.getVisibility() == View.VISIBLE) {
+                // User clicked after seeing rewards, return to main menu
+                finish();
+            }
+        });
+    }
+
+    /**
+     * Starts pulsing animation for the shake instruction text
+     */
+    private void startShakeInstructionPulsing() {
+        if (tvShakeInstruction == null || chestOpened) return;
+
+        ObjectAnimator pulseX = ObjectAnimator.ofFloat(tvShakeInstruction, "scaleX", 0.9f, 1.1f, 0.9f);
+        ObjectAnimator pulseY = ObjectAnimator.ofFloat(tvShakeInstruction, "scaleY", 0.9f, 1.1f, 0.9f);
+        ObjectAnimator pulse = ObjectAnimator.ofFloat(tvShakeInstruction, "alpha", 0.7f, 1f, 0.7f);
+
+        // Set repeat properties on individual animators
+        pulseX.setRepeatCount(ValueAnimator.INFINITE);
+        pulseX.setRepeatMode(ValueAnimator.RESTART);
+        pulseY.setRepeatCount(ValueAnimator.INFINITE);
+        pulseY.setRepeatMode(ValueAnimator.RESTART);
+        pulse.setRepeatCount(ValueAnimator.INFINITE);
+        pulse.setRepeatMode(ValueAnimator.RESTART);
+
+        AnimatorSet pulseSet = new AnimatorSet();
+        pulseSet.playTogether(pulseX, pulseY, pulse);
+        pulseSet.setDuration(1500);
+        pulseSet.start();
+
+        // Store the animator so we can stop it later
+        tvShakeInstruction.setTag(pulseSet);
+    }
+
+    /**
+     * Handles opening the chest when shake is detected
+     */
+    private void openChest() {
+        if (chestOpened || rlChestContainer == null || rlChestContainer.getVisibility() != View.VISIBLE) {
+            return;
+        }
+
+        Log.d(TAG, "Opening victory chest!");
+        chestOpened = true;
+
+        // Stop pulsing animation
+        if (tvShakeInstruction != null && tvShakeInstruction.getTag() instanceof AnimatorSet) {
+            ((AnimatorSet) tvShakeInstruction.getTag()).cancel();
+        }
+
+        // Hide shake instruction
+        if (tvShakeInstruction != null) {
+            ObjectAnimator fadeOutInstruction = ObjectAnimator.ofFloat(tvShakeInstruction, "alpha", 1f, 0f);
+            fadeOutInstruction.setDuration(300);
+            fadeOutInstruction.addListener(new android.animation.AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(android.animation.Animator animation) {
+                    tvShakeInstruction.setVisibility(View.GONE);
+                }
+            });
+            fadeOutInstruction.start();
+        }
+
+        // Animate chest opening
+        if (ivChest != null) {
+            // Chest shake animation first
+            ObjectAnimator shakeX = ObjectAnimator.ofFloat(ivChest, "translationX", 0, -15, 15, -10, 10, -5, 5, 0);
+            shakeX.setDuration(600);
+            shakeX.addListener(new android.animation.AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(android.animation.Animator animation) {
+                    // Change to open chest image
+                    ivChest.setImageResource(R.drawable.ic_chest_open);
+
+                    // Scale up slightly to show opening
+                    ObjectAnimator scaleUpX = ObjectAnimator.ofFloat(ivChest, "scaleX", 1f, 1.2f, 1.1f);
+                    ObjectAnimator scaleUpY = ObjectAnimator.ofFloat(ivChest, "scaleY", 1f, 1.2f, 1.1f);
+
+                    AnimatorSet openingAnim = new AnimatorSet();
+                    openingAnim.playTogether(scaleUpX, scaleUpY);
+                    openingAnim.setDuration(500);
+                    openingAnim.setInterpolator(new BounceInterpolator());
+                    openingAnim.start();
+
+                    // Show rewards after chest opens
+                    showRewards();
+                }
+            });
+            shakeX.start();
+        } else {
+            // Fallback if chest image is null
+            showRewards();
+        }
+    }
+
+    /**
+     * Shows the reward information after chest opens
+     */
+    private void showRewards() {
+        if (llRewardsContainer == null) return;
+
+        // Show rewards container
+        llRewardsContainer.setVisibility(View.VISIBLE);
+        llRewardsContainer.setAlpha(0f);
+        llRewardsContainer.setScaleX(0.5f);
+        llRewardsContainer.setScaleY(0.5f);
+        llRewardsContainer.setTranslationY(50f);
+
+        // Animate rewards appearing
+        AnimatorSet rewardsAnim = new AnimatorSet();
+        ObjectAnimator fadeIn = ObjectAnimator.ofFloat(llRewardsContainer, "alpha", 0f, 1f);
+        ObjectAnimator scaleUpX = ObjectAnimator.ofFloat(llRewardsContainer, "scaleX", 0.5f, 1.1f, 1f);
+        ObjectAnimator scaleUpY = ObjectAnimator.ofFloat(llRewardsContainer, "scaleY", 0.5f, 1.1f, 1f);
+        ObjectAnimator slideUp = ObjectAnimator.ofFloat(llRewardsContainer, "translationY", 50f, -10f, 0f);
+
+        rewardsAnim.playTogether(fadeIn, scaleUpX, scaleUpY, slideUp);
+        rewardsAnim.setDuration(800);
+        rewardsAnim.setInterpolator(new BounceInterpolator());
+        rewardsAnim.start();
+
+        // Add coin reward to user's account
+        addCoinRewardToUser();
+    }
+
+    /**
+     * Adds the coin reward to the user's account
+     */
+    private void addCoinRewardToUser() {
+        String userId = authService.getCurrentUserId();
+        if (userId == null || currentBoss == null) return;
+
+        int coinReward = currentBoss.getCoinReward();
+
+        authService.getCurrentUser(user -> {
+            if (user != null) {
+                user.addCoins(coinReward);
+
+                // Update user in database
+                UserRepository userRepository = new UserRepository(this);
+                userRepository.updateUser(user, new AuthCallback<Boolean>() {
+                    @Override
+                    public void onResult(Boolean success) {
+                        if (success != null && success) {
+                            Log.d(TAG, "Successfully added " + coinReward + " coins to user account");
+                        } else {
+                            Log.e(TAG, "Failed to update user coins in database");
+                        }
+                    }
+                });
+            }
+        });
     }
 
     /**
@@ -743,5 +962,46 @@ public class BossFightActivity extends AppCompatActivity {
         int powerBonus = 0;
         int extraAttackChance = 0;
         int coinBonus = 0;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Register shake detector
+        Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        if (accelerometer != null) {
+            sensorManager.registerListener(shakeDetector, accelerometer, SensorManager.SENSOR_DELAY_UI);
+        } else {
+            Log.w(TAG, "Accelerometer not available");
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Unregister shake detector
+        sensorManager.unregisterListener(shakeDetector);
+    }
+
+    /**
+     * Callback method when a shake is detected
+     */
+    private void onShakeDetected() {
+        Log.d(TAG, "Shake detected!");
+
+        // Check if we're in victory chest mode
+        if (rlChestContainer != null && rlChestContainer.getVisibility() == View.VISIBLE && !chestOpened) {
+            // Open the victory chest
+            openChest();
+            return;
+        }
+
+        // If not in chest mode, this could be used for other shake-based abilities
+        // For example, you could implement a special attack or power-up during combat
+        String userId = authService.getCurrentUserId();
+        if (userId != null && currentBoss != null && currentBoss.isAlive()) {
+            Log.d(TAG, "Shake detected during combat - could implement special ability here");
+            // You can add special combat abilities triggered by shake here if desired
+        }
     }
 }

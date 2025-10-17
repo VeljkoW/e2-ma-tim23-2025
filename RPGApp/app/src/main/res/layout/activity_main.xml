@@ -49,8 +49,20 @@
                 android:textSize="18sp"
                 android:backgroundTint="@color/boss_fight_color"
                 android:textColor="@android:color/white"
-                android:layout_marginBottom="32dp"
+                android:layout_marginBottom="16dp"
                 android:drawableLeft="@drawable/boss_placeholder"
+                android:drawablePadding="8dp" />
+
+            <Button
+                android:id="@+id/btn_spawn_boss"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:text="Spawn New Boss"
+                android:textSize="16sp"
+                android:backgroundTint="@color/primary_color"
+                android:textColor="@android:color/white"
+                android:layout_marginBottom="32dp"
+                android:drawableLeft="@drawable/ic_badge"
                 android:drawablePadding="8dp" />
 
             <!-- Missions Section -->

@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private AuthService authService;
     private BossService bossService;
     private Button bossFightButton;
+    private Button spawnBossButton;
     private Button createMissionButton;
     private Button viewMissionsButton;
     private Button createCategoryButton;
@@ -91,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initializeViews() {
         bossFightButton = findViewById(R.id.btn_boss_fight);
+        spawnBossButton = findViewById(R.id.btn_spawn_boss);
         createMissionButton = findViewById(R.id.btn_create_mission);
         viewMissionsButton = findViewById(R.id.btn_view_missions);
         createCategoryButton = findViewById(R.id.btn_create_category);
@@ -102,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupClickListeners() {
         bossFightButton.setOnClickListener(v -> openBossFight());
+        spawnBossButton.setOnClickListener(v -> spawnBoss());
         createMissionButton.setOnClickListener(v -> startActivity(new Intent(this, MissionCreationActivity.class)));
         viewMissionsButton.setOnClickListener(v -> startActivity(new Intent(this, MissionsListActivity.class)));
         createCategoryButton.setOnClickListener(v -> startActivity(new Intent(this, CategoryCreationActivity.class)));
@@ -125,6 +128,20 @@ public class MainActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Failed to get boss", e);
                     Toast.makeText(this, "Failed to load boss: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void spawnBoss() {
+        // Logic to spawn a new boss
+        bossService.createBossForUser(currentUserId)
+                .addOnSuccessListener(bossId -> {
+                    Toast.makeText(MainActivity.this, "Boss spawned successfully!", Toast.LENGTH_SHORT).show();
+                    // Refresh the boss fight button state
+                    onResume();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to spawn boss", e);
+                    Toast.makeText(this, "Failed to spawn boss: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
