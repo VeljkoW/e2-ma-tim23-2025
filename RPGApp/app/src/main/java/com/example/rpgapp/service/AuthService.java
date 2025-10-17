@@ -8,6 +8,8 @@ import com.example.rpgapp.model.User;
 import com.example.rpgapp.repository.UserRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
+import java.util.Calendar;
 import java.util.Date;
 
 public class AuthService
@@ -122,9 +124,10 @@ public class AuthService
                     userRepository.getUserById(firebaseUser.getUid(), user -> {
                         if (user != null)
                         {
-                            user.setLastLogin(new Date());
-                            userRepository.updateLastLogin(user.getId());
                             saveUserSession(user.getId());
+
+                            userRepository.updateActiveDaysOnLogin(user.getId());
+
                             onComplete.onResult(new AuthResult(true, "Login success", user));
                         }
                         else
@@ -144,6 +147,18 @@ public class AuthService
     {
         firebaseAuth.signOut();
         clearUserSession();
+    }
+
+    /**
+     * Signs out the user and returns a Task for async handling
+     * This method provides Task-based API consistent with Firebase patterns
+     */
+    public com.google.android.gms.tasks.Task<Void> signOut() {
+        return com.google.android.gms.tasks.Tasks.call(() -> {
+            firebaseAuth.signOut();
+            clearUserSession();
+            return null;
+        });
     }
 
     public void changePassword(String currentPassword, String newPassword, AuthCallback<AuthResult> onComplete)
@@ -311,5 +326,6 @@ public class AuthService
         public boolean isSuccess() { return success; }
         public String getMessage() { return message; }
         public User getUser() { return user; }
+
     }
 }

@@ -68,7 +68,7 @@ public class MissionsListActivity extends AppCompatActivity implements MissionAd
         recyclerViewMissions = findViewById(R.id.recyclerViewMissions);
         textViewEmptyState = findViewById(R.id.textViewEmptyState);
 
-        missionRepository = new MissionRepository();
+        missionRepository = new MissionRepository(this); // Pass context
         categoryRepository = new CategoryRepository();
         authService = new AuthService(this);
         missionsList = new ArrayList<>();

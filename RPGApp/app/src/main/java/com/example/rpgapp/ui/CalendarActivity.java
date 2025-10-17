@@ -68,7 +68,7 @@ public class CalendarActivity extends AppCompatActivity implements CalendarAdapt
         recyclerViewCalendar.setLayoutManager(new GridLayoutManager(this, 7)); // 7 days per week
         recyclerViewCalendar.setAdapter(calendarAdapter);
 
-        missionRepository = new MissionRepository();
+        missionRepository = new MissionRepository(this); // Pass context
         categoryRepository = new CategoryRepository();
         authService = new AuthService(this);
         allMissions = new ArrayList<>();

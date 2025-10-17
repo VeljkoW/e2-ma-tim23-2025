@@ -35,11 +35,14 @@ public class UserDao
             values.put(DatabaseHelper.COLUMN_USER_LEVEL, user.getLevel());
             values.put(DatabaseHelper.COLUMN_USER_TITLE, user.getTitle());
             values.put(DatabaseHelper.COLUMN_USER_POWER_POINTS, user.getPowerPoints());
+            values.put(DatabaseHelper.COLUMN_USER_STARTING_POWER_POINTS, user.getStartingPowerPoints());
             values.put(DatabaseHelper.COLUMN_USER_EXPERIENCE_POINTS, user.getExperiencePoints());
             values.put(DatabaseHelper.COLUMN_USER_COINS, user.getCoins());
             values.put(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED, user.isEmailVerified() ? 1 : 0);
             values.put(DatabaseHelper.COLUMN_USER_REGISTRATION_DATE, user.getRegistrationDate() != null ? user.getRegistrationDate().getTime() : System.currentTimeMillis());
             values.put(DatabaseHelper.COLUMN_USER_LAST_LOGIN, user.getLastLogin() != null ? user.getLastLogin().getTime() : null);
+            values.put(DatabaseHelper.COLUMN_USER_ACTIVE_DAYS_STREAK, user.getActiveDaysStreak());
+            values.put(DatabaseHelper.COLUMN_USER_LAST_ACTIVITY_DAY_UPDATE, user.getLastActivityDayUpdate() != null ? user.getLastActivityDayUpdate().getTime() : null);
 
             Log.d("UserDao", "ContentValues prepared, executing INSERT into " + DatabaseHelper.TABLE_USERS);
             result = db.insert(DatabaseHelper.TABLE_USERS, null, values);
@@ -209,13 +212,51 @@ public class UserDao
             values.put(DatabaseHelper.COLUMN_USER_LEVEL, user.getLevel());
             values.put(DatabaseHelper.COLUMN_USER_TITLE, user.getTitle());
             values.put(DatabaseHelper.COLUMN_USER_POWER_POINTS, user.getPowerPoints());
+            values.put(DatabaseHelper.COLUMN_USER_STARTING_POWER_POINTS, user.getStartingPowerPoints());
+            values.put(DatabaseHelper.COLUMN_USER_EXPERIENCE_POINTS, user.getExperiencePoints());
+            values.put(DatabaseHelper.COLUMN_USER_COINS, user.getCoins());
+            values.put(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED, user.isEmailVerified() ? 1 : 0);
+            values.put(DatabaseHelper.COLUMN_USER_LAST_LOGIN, user.getLastLogin() != null ? user.getLastLogin().getTime() : null);
+            values.put(DatabaseHelper.COLUMN_USER_ACTIVE_DAYS_STREAK, user.getActiveDaysStreak());
+            values.put(DatabaseHelper.COLUMN_USER_LAST_ACTIVITY_DAY_UPDATE, user.getLastActivityDayUpdate() != null ? user.getLastActivityDayUpdate().getTime() : null);
+
+            String whereClause = DatabaseHelper.COLUMN_USER_ID + " = ?";
+            String[] whereArgs = {user.getId()};
+
+            rowsAffected = db.update(DatabaseHelper.TABLE_USERS, values, whereClause, whereArgs);
+        } catch (SQLiteException e)
+        {
+            e.printStackTrace();
+        } finally
+        {
+            db.close();
+        }
+
+        return rowsAffected;
+    }
+
+    public int updateUserByEmail(User user)
+    {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        int rowsAffected = 0;
+
+        try
+        {
+            ContentValues values = new ContentValues();
+            values.put(DatabaseHelper.COLUMN_USER_ID, user.getId()); // Update the ID too
+            values.put(DatabaseHelper.COLUMN_USER_USERNAME, user.getUsername());
+            values.put(DatabaseHelper.COLUMN_USER_AVATAR_ID, user.getAvatarId());
+            values.put(DatabaseHelper.COLUMN_USER_LEVEL, user.getLevel());
+            values.put(DatabaseHelper.COLUMN_USER_TITLE, user.getTitle());
+            values.put(DatabaseHelper.COLUMN_USER_POWER_POINTS, user.getPowerPoints());
+            values.put(DatabaseHelper.COLUMN_USER_STARTING_POWER_POINTS, user.getStartingPowerPoints());
             values.put(DatabaseHelper.COLUMN_USER_EXPERIENCE_POINTS, user.getExperiencePoints());
             values.put(DatabaseHelper.COLUMN_USER_COINS, user.getCoins());
             values.put(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED, user.isEmailVerified() ? 1 : 0);
             values.put(DatabaseHelper.COLUMN_USER_LAST_LOGIN, user.getLastLogin() != null ? user.getLastLogin().getTime() : null);
 
-            String whereClause = DatabaseHelper.COLUMN_USER_ID + " = ?";
-            String[] whereArgs = {user.getId()};
+            String whereClause = DatabaseHelper.COLUMN_USER_EMAIL + " = ?";
+            String[] whereArgs = {user.getEmail()};
 
             rowsAffected = db.update(DatabaseHelper.TABLE_USERS, values, whereClause, whereArgs);
         } catch (SQLiteException e)
@@ -269,8 +310,8 @@ public class UserDao
             e.printStackTrace();
         } finally
         {
-            // DON'T CLOSE DB - keepAliveDb stays open
-            Log.d("UserDao", "keepAliveDb left open for Database Inspector");
+            db.close();
+            Log.d("UserDao", "Database closed after updateEmailVerification");
         }
     }
 
@@ -285,6 +326,16 @@ public class UserDao
         user.setLevel(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_LEVEL)));
         user.setTitle(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_TITLE)));
         user.setPowerPoints(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_POWER_POINTS)));
+
+        // Handle startingPowerPoints with backward compatibility
+        int startingPowerPointsIndex = cursor.getColumnIndex(DatabaseHelper.COLUMN_USER_STARTING_POWER_POINTS);
+        if (startingPowerPointsIndex != -1 && !cursor.isNull(startingPowerPointsIndex)) {
+            user.setStartingPowerPoints(cursor.getInt(startingPowerPointsIndex));
+        } else {
+            // For existing users without this field, default to current power points
+            user.setStartingPowerPoints(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_POWER_POINTS)));
+        }
+
         user.setExperiencePoints(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_EXPERIENCE_POINTS)));
         user.setCoins(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_COINS)));
         user.setEmailVerified(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED)) == 1);
@@ -297,6 +348,20 @@ public class UserDao
         {
             long lastLogin = cursor.getLong(lastLoginColumnIndex);
             user.setLastLogin(new Date(lastLogin));
+        }
+
+        // Učitaj activeDaysStreak
+        int activeDaysStreakIndex = cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_ACTIVE_DAYS_STREAK);
+        if (!cursor.isNull(activeDaysStreakIndex))
+        {
+            user.setActiveDaysStreak(cursor.getInt(activeDaysStreakIndex));
+        }
+
+        int lastActivityDayUpdateIndex = cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_LAST_ACTIVITY_DAY_UPDATE);
+        if (!cursor.isNull(lastActivityDayUpdateIndex))
+        {
+            long lastActivityDayUpdate = cursor.getLong(lastActivityDayUpdateIndex);
+            user.setLastActivityDayUpdate(new Date(lastActivityDayUpdate));
         }
 
         return user;

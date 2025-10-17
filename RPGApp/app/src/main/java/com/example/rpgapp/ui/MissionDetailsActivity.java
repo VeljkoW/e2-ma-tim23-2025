@@ -15,6 +15,7 @@ import com.example.rpgapp.repository.MissionRepository;
 import com.example.rpgapp.repository.UserRepository;
 import com.example.rpgapp.repository.CategoryRepository;
 import com.example.rpgapp.service.AuthService;
+import com.example.rpgapp.service.BossService;
 import com.example.rpgapp.callback.AuthCallback;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseUser;
@@ -56,7 +57,7 @@ public class MissionDetailsActivity extends AppCompatActivity {
         initViews();
         setupListeners();
 
-        missionRepository = new MissionRepository();
+        missionRepository = new MissionRepository(this); // Pass context
         userRepository = new UserRepository(this);
         authService = new AuthService(this);
         categoryRepository = new CategoryRepository();
@@ -251,7 +252,7 @@ public class MissionDetailsActivity extends AppCompatActivity {
                     currentMission.setFinalizationDateTime(new java.util.Date());
                     currentMission.setStatus(selectedStatus);
                     missionRepository.updateMission(missionId, currentMission);
-                    awardXpToUser(currentMission.getTotalXP());
+                    awardXpForMission(); // Promenjeno - sada prosleđuje celu misiju
                     setResult(RESULT_OK);
                     Toast.makeText(this, "Mission completed!", Toast.LENGTH_SHORT).show();
                     break;
@@ -449,41 +450,90 @@ public class MissionDetailsActivity extends AppCompatActivity {
         });
     }
 
-    private void awardXpToUser(int xpAmount) {
-        android.util.Log.d("MissionDetails", "Starting XP award process for " + xpAmount + " XP");
+    private void awardXpForMission() {
+        android.util.Log.d("MissionDetails", "Starting XP award process for mission: " + currentMission.getName());
 
         // Get the current user
         authService.getCurrentUser(new AuthCallback<User>() {
             @Override
             public void onResult(User user) {
                 if (user != null) {
-                    android.util.Log.d("MissionDetails", "User retrieved successfully: " + user.getUsername() + " (ID: " + user.getId() + ")");
+                    android.util.Log.d("MissionDetails", "User retrieved successfully: " + user.getUsername() + " (ID: " + user.getId() + "), Level: " + user.getLevel());
 
-                    // Try primary Firebase method first
-                    userRepository.awardXpToUser(user.getId(), xpAmount).addOnCompleteListener(task -> {
-                        runOnUiThread(() -> {
-                            if (task.isSuccessful()) {
-                                android.util.Log.d("MissionDetails", "XP awarded successfully via Firebase!");
-                                Toast.makeText(MissionDetailsActivity.this, "Mission completed! Awarded " + xpAmount + " XP!", Toast.LENGTH_LONG).show();
-                            } else {
-                                // Firebase failed, try fallback method
-                                android.util.Log.w("MissionDetails", "Firebase XP award failed, trying fallback method");
-                                userRepository.awardXpToUserFallback(user.getId(), xpAmount).addOnCompleteListener(fallbackTask -> {
+                    // Calculate XP based on user level and mission difficulty/importance
+                    int xpAmount = user.calculateMissionXP(currentMission.getDifficulty(), currentMission.getImportance());
+                    android.util.Log.d("MissionDetails", "Calculated XP for mission based on user level " + user.getLevel() + ": " + xpAmount + " XP");
+
+                    // Add XP to user first
+                    user.addExperiencePoints(xpAmount);
+
+                    // Check if user should level up and create boss
+                    if (user.levelUpAndShouldCreateBoss()) {
+                        android.util.Log.d("MissionDetails", "User leveled up! New level: " + user.getLevel());
+
+                        // Save the updated user (with new level and XP) to database
+                        userRepository.updateUser(user, new AuthCallback<Boolean>() {
+                            @Override
+                            public void onResult(Boolean success) {
+                                if (success != null && success) {
+                                    android.util.Log.d("MissionDetails", "User level updated successfully in database");
+
+                                    // Create a new boss for the leveled up user
+                                    BossService bossService = new BossService(MissionDetailsActivity.this);
+                                    bossService.createBossForUser(user.getId())
+                                        .addOnSuccessListener(bossId -> {
+                                            android.util.Log.d("MissionDetails", "New boss created with ID: " + bossId);
+                                            runOnUiThread(() -> {
+                                                Toast.makeText(MissionDetailsActivity.this,
+                                                    "Mission completed! Awarded " + xpAmount + " XP! Level up to " + user.getLevel() + "! New boss spawned!",
+                                                    Toast.LENGTH_LONG).show();
+                                            });
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            android.util.Log.e("MissionDetails", "Failed to create boss after level up", e);
+                                            runOnUiThread(() -> {
+                                                Toast.makeText(MissionDetailsActivity.this,
+                                                    "Mission completed! Leveled up to " + user.getLevel() + " but failed to create boss: " + e.getMessage(),
+                                                    Toast.LENGTH_LONG).show();
+                                            });
+                                        });
+                                } else {
+                                    android.util.Log.e("MissionDetails", "Failed to update user in database after level up");
                                     runOnUiThread(() -> {
-                                        if (fallbackTask.isSuccessful()) {
-                                            android.util.Log.d("MissionDetails", "XP awarded successfully via fallback method!");
-                                            Toast.makeText(MissionDetailsActivity.this, "Mission completed! Awarded " + xpAmount + " XP! (Local save)", Toast.LENGTH_LONG).show();
-                                        } else {
-                                            Exception exception = fallbackTask.getException();
-                                            String errorMsg = exception != null ? exception.getMessage() : "Unknown error";
-                                            android.util.Log.e("MissionDetails", "Both Firebase and fallback methods failed: " + errorMsg);
-                                            Toast.makeText(MissionDetailsActivity.this, "Mission completed, but failed to award XP: " + errorMsg, Toast.LENGTH_LONG).show();
-                                        }
+                                        Toast.makeText(MissionDetailsActivity.this,
+                                            "Mission completed! Leveled up but failed to save progress",
+                                            Toast.LENGTH_SHORT).show();
                                     });
-                                });
+                                }
                             }
                         });
-                    });
+                    } else {
+                        // No level up, just award XP normally
+                        userRepository.awardXpToUser(user.getId(), xpAmount).addOnCompleteListener(task -> {
+                            runOnUiThread(() -> {
+                                if (task.isSuccessful()) {
+                                    android.util.Log.d("MissionDetails", "XP awarded successfully via Firebase!");
+                                    Toast.makeText(MissionDetailsActivity.this, "Mission completed! Awarded " + xpAmount + " XP!", Toast.LENGTH_LONG).show();
+                                } else {
+                                    // Firebase failed, try fallback method
+                                    android.util.Log.w("MissionDetails", "Firebase XP award failed, trying fallback method");
+                                    userRepository.awardXpToUserFallback(user.getId(), xpAmount).addOnCompleteListener(fallbackTask -> {
+                                        runOnUiThread(() -> {
+                                            if (fallbackTask.isSuccessful()) {
+                                                android.util.Log.d("MissionDetails", "XP awarded successfully via fallback method!");
+                                                Toast.makeText(MissionDetailsActivity.this, "Mission completed! Awarded " + xpAmount + " XP! (Local save)", Toast.LENGTH_LONG).show();
+                                            } else {
+                                                Exception exception = fallbackTask.getException();
+                                                String errorMsg = exception != null ? exception.getMessage() : "Unknown error";
+                                                android.util.Log.e("MissionDetails", "Both Firebase and fallback methods failed: " + errorMsg);
+                                                Toast.makeText(MissionDetailsActivity.this, "Mission completed, but failed to award XP: " + errorMsg, Toast.LENGTH_LONG).show();
+                                            }
+                                        });
+                                    });
+                                }
+                            });
+                        });
+                    }
                 } else {
                     android.util.Log.e("MissionDetails", "User is null - cannot award XP");
                     runOnUiThread(() -> {

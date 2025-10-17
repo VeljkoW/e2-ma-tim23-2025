@@ -45,11 +45,14 @@ public class FirebaseUserRepository
             userData.put("level", user.getLevel());
             userData.put("title", user.getTitle());
             userData.put("powerPoints", user.getPowerPoints());
+            userData.put("startingPowerPoints", user.getStartingPowerPoints());
             userData.put("experiencePoints", user.getExperiencePoints());
             userData.put("coins", user.getCoins());
             userData.put("emailVerified", user.isEmailVerified());
             userData.put("registrationDate", user.getRegistrationDate());
             userData.put("lastLogin", user.getLastLogin());
+            userData.put("activeDaysStreak", user.getActiveDaysStreak());
+            userData.put("lastActivityDayUpdate", user.getLastActivityDayUpdate());
 
             Log.d(TAG, "Attempting to write to Firestore...");
             db.collection(COLLECTION_USERS)
@@ -190,10 +193,13 @@ public class FirebaseUserRepository
         updates.put("level", user.getLevel());
         updates.put("title", user.getTitle());
         updates.put("powerPoints", user.getPowerPoints());
+        updates.put("startingPowerPoints", user.getStartingPowerPoints());
         updates.put("experiencePoints", user.getExperiencePoints());
         updates.put("coins", user.getCoins());
         updates.put("emailVerified", user.isEmailVerified());
         updates.put("lastLogin", user.getLastLogin());
+        updates.put("activeDaysStreak", user.getActiveDaysStreak());
+        updates.put("lastActivityDayUpdate", user.getLastActivityDayUpdate());
 
         db.collection(COLLECTION_USERS)
             .document(user.getId())

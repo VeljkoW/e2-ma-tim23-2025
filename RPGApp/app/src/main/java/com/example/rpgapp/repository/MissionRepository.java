@@ -1,20 +1,25 @@
 package com.example.rpgapp.repository;
 
+import android.content.Context;
 import com.example.rpgapp.model.Mission;
+import com.example.rpgapp.model.User;
+import com.example.rpgapp.callback.AuthCallback;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MissionRepository {
     private final CollectionReference missionsRef;
+    private final UserRepository userRepository;
+    private final Context context;
 
-    public MissionRepository() {
+    public MissionRepository(Context context) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         missionsRef = db.collection("missions");
+        this.context = context;
+        this.userRepository = new UserRepository(context);
     }
 
     /**
@@ -123,53 +128,121 @@ public class MissionRepository {
     }
 
     /**
-     * Creates a mission with proper XP calculation based on daily limits.
+     * Creates a mission with proper XP calculation based on user level and daily limits.
      */
     public Task<DocumentReference> createMissionWithXPCalculation(Mission mission) {
-        return getTodaysMissions(mission.getUserId()).continueWithTask(task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                // Count today's missions by type
-                int veryEasyNormalCount = 0;
-                int easyImportantCount = 0;
-                int hardExtremelyImportantCount = 0;
-                int specialCount = 0;
+        // Create a Task that will complete when we're done
+        com.google.android.gms.tasks.TaskCompletionSource<DocumentReference> taskSource =
+            new com.google.android.gms.tasks.TaskCompletionSource<>();
 
-                for (com.google.firebase.firestore.DocumentSnapshot doc : task.getResult().getDocuments()) {
-                    Mission existingMission = doc.toObject(Mission.class);
-                    if (existingMission != null) {
-                        Mission.Difficulty diff = existingMission.getDifficulty();
-                        Mission.Importance imp = existingMission.getImportance();
+        // First, get the user's current level
+        userRepository.getUserById(mission.getUserId(), new AuthCallback<User>() {
+            @Override
+            public void onResult(User user) {
+                int userLevel = (user != null) ? user.getLevel() : 1;
 
-                        if (diff != null && imp != null) {
-                            // Count special importance missions (regardless of difficulty)
-                            if (imp == Mission.Importance.SPECIAL) {
-                                specialCount++;
-                            }
+                // Set user level in mission
+                mission.setUserLevel(userLevel);
 
-                            // Count specific combinations
-                            if (diff == Mission.Difficulty.VERY_EASY && imp == Mission.Importance.NORMAL) {
-                                veryEasyNormalCount++;
-                            }
-                            if (diff == Mission.Difficulty.EASY && imp == Mission.Importance.IMPORTANT) {
-                                easyImportantCount++;
-                            }
-                            if (diff == Mission.Difficulty.HARD && imp == Mission.Importance.EXTREMELY_IMPORTANT) {
-                                hardExtremelyImportantCount++;
+                // Now get today's missions to calculate limits
+                getTodaysMissions(mission.getUserId()).addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        // Count today's missions by type
+                        int veryEasyNormalCount = 0;
+                        int easyImportantCount = 0;
+                        int hardExtremelyImportantCount = 0;
+                        int specialCount = 0;
+
+                        for (com.google.firebase.firestore.DocumentSnapshot doc : task.getResult().getDocuments()) {
+                            Mission existingMission = doc.toObject(Mission.class);
+                            if (existingMission != null) {
+                                Mission.Difficulty diff = existingMission.getDifficulty();
+                                Mission.Importance imp = existingMission.getImportance();
+
+                                if (diff != null && imp != null) {
+                                    // Count special importance missions (regardless of difficulty)
+                                    if (imp == Mission.Importance.SPECIAL) {
+                                        specialCount++;
+                                    }
+
+                                    // Count specific combinations
+                                    if (diff == Mission.Difficulty.VERY_EASY && imp == Mission.Importance.NORMAL) {
+                                        veryEasyNormalCount++;
+                                    }
+                                    if (diff == Mission.Difficulty.EASY && imp == Mission.Importance.IMPORTANT) {
+                                        easyImportantCount++;
+                                    }
+                                    if (diff == Mission.Difficulty.HARD && imp == Mission.Importance.EXTREMELY_IMPORTANT) {
+                                        hardExtremelyImportantCount++;
+                                    }
+                                }
                             }
                         }
+
+                        // Calculate XP for new mission based on counts and user level
+                        int calculatedXP = mission.calculateTotalXP(veryEasyNormalCount, easyImportantCount, hardExtremelyImportantCount, specialCount);
+                        mission.setCalculatedTotalXP(calculatedXP);
+
+                        // Create the mission with calculated XP
+                        missionsRef.add(mission).addOnCompleteListener(createTask -> {
+                            if (createTask.isSuccessful()) {
+                                taskSource.setResult(createTask.getResult());
+                            } else {
+                                taskSource.setException(createTask.getException());
+                            }
+                        });
+                    } else {
+                        // If we can't get today's missions, use default XP calculation
+                        int defaultXP = mission.calculateTotalXPForLevel(userLevel);
+                        mission.setCalculatedTotalXP(defaultXP);
+
+                        missionsRef.add(mission).addOnCompleteListener(createTask -> {
+                            if (createTask.isSuccessful()) {
+                                taskSource.setResult(createTask.getResult());
+                            } else {
+                                taskSource.setException(createTask.getException());
+                            }
+                        });
                     }
-                }
-
-                // Calculate XP for new mission based on counts
-                int calculatedXP = mission.calculateTotalXP(veryEasyNormalCount, easyImportantCount, hardExtremelyImportantCount, specialCount);
-                mission.setCalculatedTotalXP(calculatedXP);
-
-                // Create the mission with calculated XP
-                return missionsRef.add(mission);
-            } else {
-                // If we can't get today's missions, use default XP calculation
-                return missionsRef.add(mission);
+                });
             }
         });
+
+        return taskSource.getTask();
+    }
+
+    /**
+     * Updates a mission with proper XP recalculation based on user level.
+     */
+    public Task<Void> updateMissionWithXPCalculation(String missionId, Mission mission) {
+        // Create a Task that will complete when we're done
+        com.google.android.gms.tasks.TaskCompletionSource<Void> taskSource =
+            new com.google.android.gms.tasks.TaskCompletionSource<>();
+
+        // Get the user's current level
+        userRepository.getUserById(mission.getUserId(), new AuthCallback<User>() {
+            @Override
+            public void onResult(User user) {
+                int userLevel = (user != null) ? user.getLevel() : mission.getUserLevel(); // Keep old level if user not found
+
+                // Update user level in mission
+                mission.setUserLevel(userLevel);
+
+                // Recalculate XP based on new difficulty/importance and current user level
+                int newXP = mission.calculateTotalXPForLevel(userLevel);
+                mission.setCalculatedTotalXP(newXP);
+
+                // Update the mission
+                missionsRef.document(missionId).set(mission).addOnCompleteListener(updateTask -> {
+                    if (updateTask.isSuccessful()) {
+                        taskSource.setResult(null);
+                    } else {
+                        taskSource.setException(updateTask.getException());
+                    }
+                });
+            }
+        });
+
+        return taskSource.getTask();
     }
 }

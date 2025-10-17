@@ -38,6 +38,18 @@
             android:name=".MainActivity"
             android:exported="false" />
 
+        <!-- Profile Activity -->
+        <activity
+            android:name=".ui.ProfileActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Statistics Activity -->
+        <activity
+            android:name=".ui.StatisticsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
         <!-- Mission Creation Activity -->
         <activity
             android:name=".ui.MissionCreationActivity"
@@ -85,6 +97,30 @@
             android:name=".ui.CalendarActivity"
             android:exported="false"
             android:theme="@style/Theme.RPGApp" />
+
+        <!-- Boss Fight Activity -->
+        <activity
+            android:name=".ui.BossFightActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
+        <!-- Pre Boss Equipment Activity -->
+        <activity
+            android:name=".ui.PreBossEquipmentActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Shop Activity -->
+        <activity
+            android:name=".ui.ShopActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Equipment Management Activity -->
+        <activity
+            android:name=".ui.EquipmentManagementActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
 
     </application>
 

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="80dp"
+    android:viewportWidth="120"
+    android:viewportHeight="80">
+
+    <group>
+        <!-- Chest Base -->
+        <path
+            android:fillColor="#8B4513"
+            android:pathData="M15,35 L105,35 L105,70 Q105,75 100,75 L20,75 Q15,75 15,70 Z" />
+
+        <!-- Chest Lid -->
+        <path
+            android:fillColor="#A0522D"
+            android:pathData="M10,20 Q10,15 15,15 L105,15 Q110,15 110,20 L110,40 L10,40 Z" />
+
+        <!-- Lock (converted from circle) -->
+        <path
+            android:fillColor="#FFD700"
+            android:pathData="M66,37.5 C66,41.19 63.19,44 60,44 C56.81,44 54,41.19 54,37.5 C54,33.81 56.81,31 60,31 C63.19,31 66,33.81 66,37.5 Z" />
+
+        <!-- Lock Keyhole (converted from circle) -->
+        <path
+            android:fillColor="#8B4513"
+            android:pathData="M62,37.5 C62,38.6 61.1,39.5 60,39.5 C58.9,39.5 58,38.6 58,37.5 C58,36.4 58.9,35.5 60,35.5 C61.1,35.5 62,36.4 62,37.5 Z" />
+
+        <!-- Chest Bands (converted from rect) -->
+        <path
+            android:fillColor="#654321"
+            android:pathData="M15,45 L105,45 L105,48 L15,48 Z" />
+
+        <path
+            android:fillColor="#654321"
+            android:pathData="M15,60 L105,60 L105,63 L15,63 Z" />
+
+        <!-- Corner Reinforcements (converted from circle) -->
+        <path
+            android:fillColor="#654321"
+            android:pathData="M23,45 C23,46.66 21.66,48 20,48 C18.34,48 17,46.66 17,45 C17,43.34 18.34,42 20,42 C21.66,42 23,43.34 23,45 Z" />
+
+        <path
+            android:fillColor="#654321"
+            android:pathData="M103,45 C103,46.66 101.66,48 100,48 C98.34,48 97,46.66 97,45 C97,43.34 98.34,42 100,42 C101.66,42 103,43.34 103,45 Z" />
+    </group>
+
+</vector>
