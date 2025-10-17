@@ -12,6 +12,7 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.BounceInterpolator;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,11 +21,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import com.example.rpgapp.R;
+import com.example.rpgapp.callback.AuthCallback;
 import com.example.rpgapp.model.Boss;
 import com.example.rpgapp.model.Equipment;
 import com.example.rpgapp.service.AuthService;
 import com.example.rpgapp.service.BossService;
 import com.example.rpgapp.repository.EquipmentRepository;
+import com.example.rpgapp.repository.BossRepository;
+import com.example.rpgapp.repository.UserRepository;
 
 import java.util.List;
 
@@ -48,6 +52,13 @@ public class BossFightActivity extends AppCompatActivity {
     private TextView tvBossCreationDate;
     private Button btnAttack;
     private Button btnBack;
+
+    // New UI Components for user stats and equipment
+    private TextView tvUserCurrentPower;
+    private TextView tvUserBasePower;
+    private ProgressBar pbUserPower;
+    private LinearLayout llEquippedItems;
+    private TextView tvNoItems;
 
     // Animation components
     private ImageView ivBossImage;
@@ -91,6 +102,13 @@ public class BossFightActivity extends AppCompatActivity {
         tvBossCreationDate = findViewById(R.id.tv_boss_creation_date);
         btnAttack = findViewById(R.id.btn_attack);
         btnBack = findViewById(R.id.btn_back);
+
+        // New UI Components initialization
+        tvUserCurrentPower = findViewById(R.id.tv_user_current_power);
+        tvUserBasePower = findViewById(R.id.tv_user_base_power);
+        pbUserPower = findViewById(R.id.pb_user_power);
+        llEquippedItems = findViewById(R.id.ll_equipped_items);
+        tvNoItems = findViewById(R.id.tv_no_items);
 
         // Animation components
         ivBossImage = findViewById(R.id.iv_boss_image);
@@ -171,6 +189,71 @@ public class BossFightActivity extends AppCompatActivity {
         } else {
             btnAttack.setText("Attack (" + currentBoss.getNumberOfAttacks() + " left)");
         }
+
+        // Update user power points display
+        updateUserPowerUI();
+
+        // Load and display equipped items
+        loadAndDisplayEquippedItems();
+    }
+
+    private void updateUserPowerUI() {
+        String userId = authService.getCurrentUserId();
+        if (userId == null) return;
+
+        authService.getCurrentUser(user -> {
+            if (user != null) {
+                // Update current and base power text views
+                tvUserCurrentPower.setText("Current Power: " + user.getPowerPoints());
+                tvUserBasePower.setText("Base Power: " + user.getStartingPowerPoints());
+
+                // Calculate and update power progress bar (blue bar)
+                int powerPercentage = (int) ((double) user.getPowerPoints() / user.getStartingPowerPoints() * 100);
+                pbUserPower.setProgress(powerPercentage);
+            } else {
+                Log.e(TAG, "Failed to get current user for power points UI update");
+            }
+        });
+    }
+
+    private void loadAndDisplayEquippedItems() {
+        String userId = authService.getCurrentUserId();
+        if (userId == null) return;
+
+        EquipmentRepository equipmentRepository = new EquipmentRepository();
+        equipmentRepository.getEquipmentList(
+            equipmentRepository.getUserEquipment(userId),
+            new EquipmentRepository.EquipmentCallback<List<Equipment>>() {
+                @Override
+                public void onSuccess(List<Equipment> equipmentList) {
+                    llEquippedItems.removeAllViews();
+
+                    if (equipmentList == null || equipmentList.isEmpty()) {
+                        tvNoItems.setVisibility(View.VISIBLE);
+                    } else {
+                        tvNoItems.setVisibility(View.GONE);
+
+                        // Display each equipped item
+                        for (Equipment equipment : equipmentList) {
+                            if (equipment.isEquipped() && equipment.canBeUsed()) {
+                                View itemView = getLayoutInflater().inflate(R.layout.item_equipped, llEquippedItems, false);
+                                TextView tvItemName = itemView.findViewById(R.id.tv_item_name);
+                                TextView tvItemBonus = itemView.findViewById(R.id.tv_item_bonus);
+
+                                tvItemName.setText(equipment.getName());
+                                tvItemBonus.setText("Power Bonus: " + equipment.getPowerBonus());
+
+                                llEquippedItems.addView(itemView);
+                            }
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Log.e(TAG, "Failed to load equipment for display", e);
+                }
+            });
     }
 
     private void attackBoss() {
@@ -244,7 +327,8 @@ public class BossFightActivity extends AppCompatActivity {
                 public void onFailure(Exception e) {
                     Log.w(TAG, "Failed to load equipment, proceeding with base stats: " + e.getMessage());
                     // Proceed with base stats if equipment loading fails
-                    performAttack(userId, basePowerPoints);
+                    EquipmentBonuses emptyBonuses = new EquipmentBonuses();
+                    performEnhancedAttack(userId, basePowerPoints, currentBoss.getChanceTododge(), currentBoss.getCoinReward(), emptyBonuses);
                 }
             });
     }
@@ -292,6 +376,9 @@ public class BossFightActivity extends AppCompatActivity {
 
                         // Check if fight is over
                         if (result.isFightOver()) {
+                            // Perform cleanup after fight ends (win or lose)
+                            performPostFightCleanup(userId);
+
                             if (result.getResultType() == BossService.AttackResult.ResultType.BOSS_DEFEATED) {
                                 playVictoryAnimation();
                             } else if (result.getResultType() == BossService.AttackResult.ResultType.BOSS_WINS) {
@@ -471,6 +558,184 @@ public class BossFightActivity extends AppCompatActivity {
                 finish(); // Return to main activity after defeat
             }, 3000);
         }
+    }
+
+    /**
+     * Performs cleanup after a boss fight ends (win or lose)
+     * - Unequips all user equipment and decrements remaining battles
+     * - Resets boss stats to starting values
+     * - Resets user power points to starting value
+     */
+    private void performPostFightCleanup(String userId) {
+        Log.d(TAG, "Starting post-fight cleanup for user: " + userId);
+
+        // Step 1: Reset equipment (unequip and decrement remaining battles)
+        resetUserEquipment(userId, () -> {
+            // Step 2: Reset boss stats to starting values
+            resetBossStats(() -> {
+                // Step 3: Reset user power points to starting value
+                resetUserPowerPoints(userId, () -> {
+                    Log.d(TAG, "Post-fight cleanup completed successfully");
+                });
+            });
+        });
+    }
+
+    /**
+     * Unequips all equipped items and decrements their remaining battles
+     */
+    private void resetUserEquipment(String userId, Runnable onComplete) {
+        EquipmentRepository equipmentRepository = new EquipmentRepository();
+
+        equipmentRepository.getEquipmentList(
+            equipmentRepository.getUserEquipment(userId),
+            new EquipmentRepository.EquipmentCallback<List<Equipment>>() {
+                @Override
+                public void onSuccess(List<Equipment> equipmentList) {
+                    // Count equipped items first
+                    int equippedItemsCount = 0;
+                    for (Equipment equipment : equipmentList) {
+                        if (equipment.isEquipped()) {
+                            equippedItemsCount++;
+                        }
+                    }
+
+                    // If no equipment was equipped, proceed immediately
+                    if (equippedItemsCount == 0) {
+                        Log.d(TAG, "No equipped items found, proceeding to next cleanup step");
+                        onComplete.run();
+                        return;
+                    }
+
+                    // Reset counters for this operation
+                    equipmentUpdatesCompleted = 0;
+                    totalEquipmentUpdates = equippedItemsCount;
+
+                    // Process each equipped item
+                    for (Equipment equipment : equipmentList) {
+                        if (equipment.isEquipped()) {
+                            // Unequip the item
+                            equipment.setEquipped(false);
+
+                            // Decrement remaining battles for clothing items
+                            if (equipment.getType() == Equipment.EquipmentType.CLOTHING) {
+                                int remaining = equipment.getRemainingBattles();
+                                equipment.setRemainingBattles(Math.max(0, remaining - 1));
+
+                                Log.d(TAG, "Equipment " + equipment.getName() +
+                                      " unequipped, remaining battles: " + equipment.getRemainingBattles());
+                            }
+
+                            // Mark potions as used if they were equipped
+                            if (equipment.getType() == Equipment.EquipmentType.POTION) {
+                                equipment.setUsed(true);
+                                Log.d(TAG, "Potion " + equipment.getName() + " marked as used");
+                            }
+
+                            // Update equipment in database
+                            equipmentRepository.updateEquipment(equipment)
+                                .addOnSuccessListener(result -> {
+                                    // Check if all equipment has been processed
+                                    checkEquipmentUpdateComplete(onComplete);
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Failed to update equipment: " + equipment.getName(), e);
+                                    checkEquipmentUpdateComplete(onComplete);
+                                });
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Log.e(TAG, "Failed to load equipment for cleanup", e);
+                    // Continue with cleanup even if equipment loading fails
+                    onComplete.run();
+                }
+            });
+    }
+
+    // Counter to track equipment updates
+    private int equipmentUpdatesCompleted = 0;
+    private int totalEquipmentUpdates = 0;
+
+    private void checkEquipmentUpdateComplete(Runnable onComplete) {
+        equipmentUpdatesCompleted++;
+
+        if (equipmentUpdatesCompleted >= totalEquipmentUpdates) {
+            Log.d(TAG, "All equipment updates completed (" + equipmentUpdatesCompleted + "/" + totalEquipmentUpdates + ")");
+            // Reset counters for next use
+            equipmentUpdatesCompleted = 0;
+            totalEquipmentUpdates = 0;
+            onComplete.run();
+        }
+    }
+
+    /**
+     * Resets boss stats to their starting values
+     */
+    private void resetBossStats(Runnable onComplete) {
+        if (currentBoss == null) {
+            Log.w(TAG, "Cannot reset boss stats - currentBoss is null");
+            onComplete.run();
+            return;
+        }
+
+        Log.d(TAG, "Resetting boss stats to starting values");
+
+        // Reset boss stats to starting values
+        currentBoss.setNumberOfAttacks(currentBoss.getStartingNumberOfAttacks());
+        currentBoss.setChanceTododge(currentBoss.getStartingChanceToDodge());
+        currentBoss.setCoinReward(currentBoss.getStartingCoinReward());
+
+        Log.d(TAG, "Boss stats reset - Attacks: " + currentBoss.getNumberOfAttacks() +
+                  ", Dodge: " + (currentBoss.getChanceTododge() * 100) + "%" +
+                  ", Coin Reward: " + currentBoss.getCoinReward());
+
+        // Update boss in database using BossRepository directly
+        BossRepository bossRepository = new BossRepository();
+        bossRepository.updateBoss(currentBoss.getId(), currentBoss)
+            .addOnSuccessListener(result -> {
+                Log.d(TAG, "Boss stats successfully updated in database");
+                onComplete.run();
+            })
+            .addOnFailureListener(e -> {
+                Log.e(TAG, "Failed to update boss stats in database", e);
+                // Continue with cleanup even if boss update fails
+                onComplete.run();
+            });
+    }
+
+    /**
+     * Resets user power points to starting value
+     */
+    private void resetUserPowerPoints(String userId, Runnable onComplete) {
+        authService.getCurrentUser(user -> {
+            if (user != null) {
+                Log.d(TAG, "Resetting user power points from " + user.getPowerPoints() +
+                          " to " + user.getStartingPowerPoints());
+
+                // Reset power points to starting value
+                user.setPowerPoints(user.getStartingPowerPoints());
+
+                // Update user in database using UserRepository directly
+                UserRepository userRepository = new UserRepository(this);
+                userRepository.updateUser(user, new AuthCallback<Boolean>() {
+                    @Override
+                    public void onResult(Boolean success) {
+                        if (success != null && success) {
+                            Log.d(TAG, "User power points successfully reset to starting value");
+                        } else {
+                            Log.e(TAG, "Failed to update user power points in database");
+                        }
+                        onComplete.run();
+                    }
+                });
+            } else {
+                Log.e(TAG, "Cannot reset user power points - user is null");
+                onComplete.run();
+            }
+        });
     }
 
     // Helper class to store equipment bonuses

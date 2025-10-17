@@ -45,6 +45,7 @@ public class FirebaseUserRepository
             userData.put("level", user.getLevel());
             userData.put("title", user.getTitle());
             userData.put("powerPoints", user.getPowerPoints());
+            userData.put("startingPowerPoints", user.getStartingPowerPoints());
             userData.put("experiencePoints", user.getExperiencePoints());
             userData.put("coins", user.getCoins());
             userData.put("emailVerified", user.isEmailVerified());
@@ -192,6 +193,7 @@ public class FirebaseUserRepository
         updates.put("level", user.getLevel());
         updates.put("title", user.getTitle());
         updates.put("powerPoints", user.getPowerPoints());
+        updates.put("startingPowerPoints", user.getStartingPowerPoints());
         updates.put("experiencePoints", user.getExperiencePoints());
         updates.put("coins", user.getCoins());
         updates.put("emailVerified", user.isEmailVerified());

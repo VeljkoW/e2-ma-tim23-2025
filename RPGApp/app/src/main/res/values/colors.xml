@@ -36,6 +36,10 @@
     <color name="hp_bar_color">#F44336</color>
     <color name="hp_bar_background">#FFCDD2</color>
 
+    <!-- Power Points Colors -->
+    <color name="power_points_color">#2196F3</color>
+    <color name="power_points_background">#BBDEFB</color>
+
     <!-- UI Element Colors -->
     <color name="coin_color">#FFD700</color>
     <color name="secondary_button_color">#757575</color>

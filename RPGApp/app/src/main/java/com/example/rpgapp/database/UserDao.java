@@ -35,6 +35,7 @@ public class UserDao
             values.put(DatabaseHelper.COLUMN_USER_LEVEL, user.getLevel());
             values.put(DatabaseHelper.COLUMN_USER_TITLE, user.getTitle());
             values.put(DatabaseHelper.COLUMN_USER_POWER_POINTS, user.getPowerPoints());
+            values.put(DatabaseHelper.COLUMN_USER_STARTING_POWER_POINTS, user.getStartingPowerPoints());
             values.put(DatabaseHelper.COLUMN_USER_EXPERIENCE_POINTS, user.getExperiencePoints());
             values.put(DatabaseHelper.COLUMN_USER_COINS, user.getCoins());
             values.put(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED, user.isEmailVerified() ? 1 : 0);
@@ -211,6 +212,7 @@ public class UserDao
             values.put(DatabaseHelper.COLUMN_USER_LEVEL, user.getLevel());
             values.put(DatabaseHelper.COLUMN_USER_TITLE, user.getTitle());
             values.put(DatabaseHelper.COLUMN_USER_POWER_POINTS, user.getPowerPoints());
+            values.put(DatabaseHelper.COLUMN_USER_STARTING_POWER_POINTS, user.getStartingPowerPoints());
             values.put(DatabaseHelper.COLUMN_USER_EXPERIENCE_POINTS, user.getExperiencePoints());
             values.put(DatabaseHelper.COLUMN_USER_COINS, user.getCoins());
             values.put(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED, user.isEmailVerified() ? 1 : 0);
@@ -247,6 +249,7 @@ public class UserDao
             values.put(DatabaseHelper.COLUMN_USER_LEVEL, user.getLevel());
             values.put(DatabaseHelper.COLUMN_USER_TITLE, user.getTitle());
             values.put(DatabaseHelper.COLUMN_USER_POWER_POINTS, user.getPowerPoints());
+            values.put(DatabaseHelper.COLUMN_USER_STARTING_POWER_POINTS, user.getStartingPowerPoints());
             values.put(DatabaseHelper.COLUMN_USER_EXPERIENCE_POINTS, user.getExperiencePoints());
             values.put(DatabaseHelper.COLUMN_USER_COINS, user.getCoins());
             values.put(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED, user.isEmailVerified() ? 1 : 0);
@@ -323,6 +326,16 @@ public class UserDao
         user.setLevel(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_LEVEL)));
         user.setTitle(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_TITLE)));
         user.setPowerPoints(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_POWER_POINTS)));
+
+        // Handle startingPowerPoints with backward compatibility
+        int startingPowerPointsIndex = cursor.getColumnIndex(DatabaseHelper.COLUMN_USER_STARTING_POWER_POINTS);
+        if (startingPowerPointsIndex != -1 && !cursor.isNull(startingPowerPointsIndex)) {
+            user.setStartingPowerPoints(cursor.getInt(startingPowerPointsIndex));
+        } else {
+            // For existing users without this field, default to current power points
+            user.setStartingPowerPoints(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_POWER_POINTS)));
+        }
+
         user.setExperiencePoints(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_EXPERIENCE_POINTS)));
         user.setCoins(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_COINS)));
         user.setEmailVerified(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED)) == 1);

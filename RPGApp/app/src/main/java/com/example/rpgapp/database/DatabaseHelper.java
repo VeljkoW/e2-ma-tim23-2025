@@ -9,7 +9,7 @@ public class DatabaseHelper extends SQLiteOpenHelper
 
     // Database info
     private static final String DATABASE_NAME = "rpg_app.db";
-    private static final int DATABASE_VERSION = 3; // Povećana verzija zbog dodavanja last_activity_day_update kolone
+    private static final int DATABASE_VERSION = 4; // Increased version to add starting_power_points column
 
     // User table
     public static final String TABLE_USERS = "users";
@@ -20,6 +20,7 @@ public class DatabaseHelper extends SQLiteOpenHelper
     public static final String COLUMN_USER_LEVEL = "level";
     public static final String COLUMN_USER_TITLE = "title";
     public static final String COLUMN_USER_POWER_POINTS = "power_points";
+    public static final String COLUMN_USER_STARTING_POWER_POINTS = "starting_power_points";
     public static final String COLUMN_USER_EXPERIENCE_POINTS = "experience_points";
     public static final String COLUMN_USER_COINS = "coins";
     public static final String COLUMN_USER_EMAIL_VERIFIED = "email_verified";
@@ -38,6 +39,7 @@ public class DatabaseHelper extends SQLiteOpenHelper
         COLUMN_USER_LEVEL + " INTEGER DEFAULT 0, " +
         COLUMN_USER_TITLE + " TEXT DEFAULT 'Crook', " +
         COLUMN_USER_POWER_POINTS + " INTEGER DEFAULT 0, " +
+        COLUMN_USER_STARTING_POWER_POINTS + " INTEGER DEFAULT 0, " +
         COLUMN_USER_EXPERIENCE_POINTS + " INTEGER DEFAULT 0, " +
         COLUMN_USER_COINS + " INTEGER DEFAULT 0, " +
         COLUMN_USER_EMAIL_VERIFIED + " INTEGER DEFAULT 0, " +
@@ -82,6 +84,12 @@ public class DatabaseHelper extends SQLiteOpenHelper
         {
             db.execSQL("ALTER TABLE " + TABLE_USERS +
                       " ADD COLUMN " + COLUMN_USER_LAST_ACTIVITY_DAY_UPDATE + " INTEGER");
+        }
+
+        if (oldVersion < 4)
+        {
+            db.execSQL("ALTER TABLE " + TABLE_USERS +
+                      " ADD COLUMN " + COLUMN_USER_STARTING_POWER_POINTS + " INTEGER DEFAULT 0");
         }
     }
 
