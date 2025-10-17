@@ -34,6 +34,7 @@ import com.example.rpgapp.repository.EquipmentRepository;
 import com.example.rpgapp.repository.BossRepository;
 import com.example.rpgapp.repository.UserRepository;
 import com.example.rpgapp.util.ShakeDetector;
+import com.example.rpgapp.util.EquipmentRewardSystem;
 
 import java.util.List;
 
@@ -751,7 +752,7 @@ public class BossFightActivity extends AppCompatActivity {
     }
 
     /**
-     * Adds the coin reward to the user's account
+     * Adds the coin reward to the user's account and handles equipment drops
      */
     private void addCoinRewardToUser() {
         String userId = authService.getCurrentUserId();
@@ -770,12 +771,32 @@ public class BossFightActivity extends AppCompatActivity {
                     public void onResult(Boolean success) {
                         if (success != null && success) {
                             Log.d(TAG, "Successfully added " + coinReward + " coins to user account");
+
+                            // Roll for equipment reward after coin reward is processed
+                            rollForEquipmentReward(userId);
                         } else {
                             Log.e(TAG, "Failed to update user coins in database");
+                            // Still try equipment roll even if coin update fails
+                            rollForEquipmentReward(userId);
                         }
                     }
                 });
             }
+        });
+    }
+
+    /**
+     * Rolls for equipment reward using the EquipmentRewardSystem
+     */
+    private void rollForEquipmentReward(String userId) {
+        EquipmentRewardSystem equipmentRewardSystem = new EquipmentRewardSystem(this);
+
+        // Use the boss's specific equipment drop chance
+        double bossEquipmentDropChance = currentBoss.getChanceForEquipmentReward();
+
+        equipmentRewardSystem.rollForEquipmentReward(userId, bossEquipmentDropChance, equipment -> {
+            // Update UI to show the equipment reward (or lack thereof)
+            EquipmentRewardSystem.addEquipmentRewardToUI(this, llRewardsContainer, equipment);
         });
     }
 
