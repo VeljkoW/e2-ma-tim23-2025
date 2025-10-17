@@ -110,10 +110,22 @@ public class User {
 
         int ppToAdd = calculatePPForLevelUp(this.level);
         this.powerPoints += ppToAdd;
+        this.startingPowerPoints = this.powerPoints; // Update starting power points to current level
 
         this.title = getTitleForLevel(this.level);
 
         return true;
+    }
+
+    /**
+     * Levels up the user and indicates if a new boss should be created
+     * @return true if user leveled up and a new boss should be spawned, false otherwise
+     */
+    public boolean levelUpAndShouldCreateBoss()
+    {
+        boolean leveledUp = levelUp();
+        // Create a boss every time the user levels up
+        return leveledUp;
     }
 
     private int calculatePPForLevelUp(int newLevel)
