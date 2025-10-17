@@ -21,8 +21,11 @@ import com.example.rpgapp.adapter.FriendRequestAdapter;
 import com.example.rpgapp.adapter.FriendsAdapter;
 import com.example.rpgapp.adapter.UserSearchAdapter;
 import com.example.rpgapp.callback.AuthCallback;
+import com.example.rpgapp.model.Alliance;
+import com.example.rpgapp.model.AllianceInvitation;
 import com.example.rpgapp.model.Friendship;
 import com.example.rpgapp.model.User;
+import com.example.rpgapp.repository.AllianceRepository;
 import com.example.rpgapp.repository.FriendshipRepository;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
@@ -45,7 +48,9 @@ public class FriendsActivity extends AppCompatActivity {
     private UserSearchAdapter searchAdapter;
 
     private FriendshipRepository friendshipRepository;
+    private AllianceRepository allianceRepository;
     private String currentUserId;
+    private String currentUsername;
 
     private static final int TAB_FRIENDS = 0;
     private static final int TAB_REQUESTS = 1;
@@ -86,7 +91,24 @@ public class FriendsActivity extends AppCompatActivity {
 
     private void initRepository() {
         friendshipRepository = new FriendshipRepository();
+        allianceRepository = new AllianceRepository();
         currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        // Load current username
+        loadCurrentUsername();
+    }
+
+    private void loadCurrentUsername() {
+        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(currentUserId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    User user = documentSnapshot.toObject(User.class);
+                    if (user != null) {
+                        currentUsername = user.getUsername();
+                    }
+                });
     }
 
     private void setupRecyclerView() {
@@ -109,8 +131,7 @@ public class FriendsActivity extends AppCompatActivity {
 
             @Override
             public void onInviteToAlliance(User friend) {
-                // TODO: Pozovi prijatelja u savez
-                Toast.makeText(FriendsActivity.this, "Invite to alliance: " + friend.getUsername(), Toast.LENGTH_SHORT).show();
+                inviteFriendToAlliance(friend);
             }
         });
 
@@ -249,8 +270,10 @@ public class FriendsActivity extends AppCompatActivity {
                 friendshipRepository.getUsersByIds(friendIds, new AuthCallback<List<User>>() {
                     @Override
                     public void onResult(List<User> friends) {
-                        showLoading(false);
                         friendsAdapter.setFriends(friends);
+
+                        // Load invitation status for each friend
+                        loadInvitationStatuses(friends);
 
                         if (friends.isEmpty()) {
                             emptyTextView.setText("No friends yet. Search for users to add!");
@@ -260,6 +283,45 @@ public class FriendsActivity extends AppCompatActivity {
                         }
                     }
                 });
+            }
+        });
+    }
+
+    private void loadInvitationStatuses(List<User> friends) {
+        // First check if user has an alliance
+        allianceRepository.getUserAlliance(currentUserId, new AuthCallback<Alliance>() {
+            @Override
+            public void onResult(Alliance alliance) {
+                showLoading(false);
+                if (alliance == null) {
+                    return;
+                }
+
+                // Check invitation status and alliance membership for each friend
+                Map<String, Boolean> invitedMap = new HashMap<>();
+                Map<String, Boolean> inAllianceMap = new HashMap<>();
+                final int[] processedCount = {0};
+
+                for (User friend : friends) {
+                    // Check if friend is already in the same alliance
+                    boolean isInSameAlliance = alliance.getMemberIds().contains(friend.getId());
+                    inAllianceMap.put(friend.getId(), isInSameAlliance);
+
+                    // Check if there's a pending invitation
+                    allianceRepository.checkPendingInvitation(alliance.getId(), friend.getId(),
+                            new AuthCallback<AllianceInvitation>() {
+                        @Override
+                        public void onResult(AllianceInvitation invitation) {
+                            invitedMap.put(friend.getId(), invitation != null);
+                            processedCount[0]++;
+
+                            if (processedCount[0] == friends.size()) {
+                                friendsAdapter.setInvitedFriends(invitedMap);
+                                friendsAdapter.setAllianceMembers(inAllianceMap);
+                            }
+                        }
+                    });
+                }
             }
         });
     }
@@ -476,6 +538,88 @@ public class FriendsActivity extends AppCompatActivity {
 
     private void showLoading(boolean show) {
         progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    private void inviteFriendToAlliance(User friend) {
+        // First check if user has an alliance
+        showLoading(true);
+        allianceRepository.getUserAlliance(currentUserId, new AuthCallback<Alliance>() {
+            @Override
+            public void onResult(Alliance alliance) {
+                if (alliance != null) {
+                    // Check if invitation already exists
+                    allianceRepository.checkPendingInvitation(alliance.getId(), friend.getId(),
+                            new AuthCallback<AllianceInvitation>() {
+                        @Override
+                        public void onResult(AllianceInvitation existingInvitation) {
+                            showLoading(false);
+                            if (existingInvitation != null) {
+                                // Invitation exists, ask to cancel it
+                                showCancelInvitationDialog(existingInvitation, friend);
+                            } else {
+                                // No invitation, send new one
+                                sendAllianceInvitation(alliance, friend);
+                            }
+                        }
+                    });
+                } else {
+                    showLoading(false);
+                    Toast.makeText(FriendsActivity.this,
+                            "You must be in an alliance to invite friends", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void showCancelInvitationDialog(AllianceInvitation invitation, User friend) {
+        new AlertDialog.Builder(this)
+                .setTitle("Cancel Invitation")
+                .setMessage("You already invited " + friend.getUsername() + " to your alliance. Do you want to cancel the invitation?")
+                .setPositiveButton("Cancel Invitation", (dialog, which) -> cancelInvitation(invitation, friend))
+                .setNegativeButton("Keep Invitation", null)
+                .show();
+    }
+
+    private void cancelInvitation(AllianceInvitation invitation, User friend) {
+        showLoading(true);
+        allianceRepository.cancelInvitation(invitation.getId(), new AuthCallback<Boolean>() {
+            @Override
+            public void onResult(Boolean success) {
+                showLoading(false);
+                if (success) {
+                    Toast.makeText(FriendsActivity.this,
+                            "Invitation to " + friend.getUsername() + " cancelled", Toast.LENGTH_SHORT).show();
+                    friendsAdapter.markAsInvited(friend.getId(), false);
+                } else {
+                    Toast.makeText(FriendsActivity.this,
+                            "Failed to cancel invitation", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void sendAllianceInvitation(Alliance alliance, User friend) {
+        if (currentUsername == null) {
+            Toast.makeText(this, "Loading user data...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        showLoading(true);
+        allianceRepository.sendInvitation(alliance.getId(), alliance.getName(),
+                currentUserId, currentUsername, friend.getId(), new AuthCallback<Boolean>() {
+            @Override
+            public void onResult(Boolean success) {
+                showLoading(false);
+                if (success) {
+                    Toast.makeText(FriendsActivity.this,
+                            "Invitation sent to " + friend.getUsername(), Toast.LENGTH_SHORT).show();
+                    friendsAdapter.markAsInvited(friend.getId(), true);
+                } else {
+                    Toast.makeText(FriendsActivity.this,
+                            "Failed to send invitation", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     @Override

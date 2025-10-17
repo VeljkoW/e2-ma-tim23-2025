@@ -14,13 +14,17 @@ import com.example.rpgapp.R;
 import com.example.rpgapp.model.User;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.FriendViewHolder>
 {
 
     private List<User> friends;
     private OnFriendActionListener listener;
+    private Map<String, Boolean> invitedFriends; // Track invited friends
+    private Map<String, Boolean> allianceMembers; // Track friends already in alliance
 
     public interface OnFriendActionListener {
         void onViewProfile(User friend);
@@ -31,10 +35,27 @@ public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.FriendVi
     public FriendsAdapter(OnFriendActionListener listener) {
         this.friends = new ArrayList<>();
         this.listener = listener;
+        this.invitedFriends = new HashMap<>();
+        this.allianceMembers = new HashMap<>();
     }
 
     public void setFriends(List<User> friends) {
         this.friends = friends;
+        notifyDataSetChanged();
+    }
+
+    public void setInvitedFriends(Map<String, Boolean> invitedFriends) {
+        this.invitedFriends = invitedFriends;
+        notifyDataSetChanged();
+    }
+
+    public void setAllianceMembers(Map<String, Boolean> allianceMembers) {
+        this.allianceMembers = allianceMembers;
+        notifyDataSetChanged();
+    }
+
+    public void markAsInvited(String friendId, boolean invited) {
+        invitedFriends.put(friendId, invited);
         notifyDataSetChanged();
     }
 
@@ -99,6 +120,21 @@ public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.FriendVi
 
             // Postavi avatar
             setAvatarImage(friend.getAvatarId());
+
+            // Check if friend is already invited
+            boolean isInvited = invitedFriends.getOrDefault(friend.getId(), false);
+            boolean isAllianceMember = allianceMembers.getOrDefault(friend.getId(), false);
+
+            if (isAllianceMember) {
+                inviteButton.setText("In Alliance");
+                inviteButton.setEnabled(false);
+            } else if (isInvited) {
+                inviteButton.setText("Invited ✓");
+                inviteButton.setEnabled(true);
+            } else {
+                inviteButton.setText("Invite");
+                inviteButton.setEnabled(true);
+            }
 
             inviteButton.setOnClickListener(v -> {
                 if (listener != null) {

@@ -116,6 +116,24 @@
             android:exported="false"
             android:theme="@style/Theme.RPGApp" />
 
+        <!-- Alliance Activity -->
+        <activity
+            android:name=".ui.AllianceActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Alliance Chat Activity -->
+        <activity
+            android:name=".ui.AllianceChatActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Alliance Invitations Activity -->
+        <activity
+            android:name=".ui.AllianceInvitationsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
     </application>
 
 </manifest>

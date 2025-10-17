@@ -99,6 +99,16 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.FriendsActivity.class);
             startActivity(intent);
         });
+
+        findViewById(R.id.buttonAlliance).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.AllianceActivity.class);
+            startActivity(intent);
+        });
+
+        findViewById(R.id.buttonAllianceInvites).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.rpgapp.ui.AllianceInvitationsActivity.class);
+            startActivity(intent);
+        });
     }
 
     @Override
