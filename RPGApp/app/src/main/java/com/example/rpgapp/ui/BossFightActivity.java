@@ -263,7 +263,6 @@ public class BossFightActivity extends AppCompatActivity {
                     } else {
                         boolean hasActiveItems = false;
 
-                        // Display each equipped or active item (including potions)
                         for (Equipment equipment : equipmentList) {
                             // Check both equipped and active (potions use isActive)
                             boolean isEquipmentActive = equipment.isEquipped() || equipment.isActive();
