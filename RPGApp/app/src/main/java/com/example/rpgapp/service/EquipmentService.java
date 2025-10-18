@@ -63,6 +63,7 @@ public class EquipmentService
         }
 
         int price = calculateEquipmentPrice(userLevel, percentage);
+        android.util.Log.d("EquipmentService", "purchasePotion: userId=" + userId + ", type=" + potionType + ", price=" + price);
 
         db.collection("users").document(userId).get()
                 .addOnSuccessListener(documentSnapshot ->
@@ -70,24 +71,42 @@ public class EquipmentService
                     User user = documentSnapshot.toObject(User.class);
                     if (user != null && user.getCoins() >= price)
                     {
+                        android.util.Log.d("EquipmentService", "purchasePotion: User has enough coins. Current: " + user.getCoins());
                         Equipment equipment = Equipment.createPotion(userId, potionType, price);
 
                         equipmentRepository.addEquipment(equipment)
                                 .addOnSuccessListener(aVoid ->
                                 {
-                                    user.setCoins(user.getCoins() - price);
-                                    db.collection("users").document(userId).set(user)
-                                            .addOnSuccessListener(aVoid1 -> callback.onSuccess(equipment))
-                                            .addOnFailureListener(callback::onFailure);
+                                    android.util.Log.d("EquipmentService", "purchasePotion: Equipment added to repository");
+                                    int newCoins = user.getCoins() - price;
+                                    java.util.Map<String, Object> updates = new java.util.HashMap<>();
+                                    updates.put("coins", newCoins);
+
+                                    db.collection("users").document(userId).update(updates)
+                                            .addOnSuccessListener(aVoid1 -> {
+                                                android.util.Log.d("EquipmentService", "purchasePotion: Coins updated successfully. New: " + newCoins);
+                                                callback.onSuccess(equipment);
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                android.util.Log.e("EquipmentService", "purchasePotion: Failed to update coins", e);
+                                                callback.onFailure(e);
+                                            });
                                 })
-                                .addOnFailureListener(callback::onFailure);
+                                .addOnFailureListener(e -> {
+                                    android.util.Log.e("EquipmentService", "purchasePotion: Failed to add equipment", e);
+                                    callback.onFailure(e);
+                                });
                     }
                     else
                     {
+                        android.util.Log.e("EquipmentService", "purchasePotion: Not enough coins. Has: " + (user != null ? user.getCoins() : "null user") + ", needs: " + price);
                         callback.onFailure(new Exception("Not enough coins"));
                     }
                 })
-                .addOnFailureListener(callback::onFailure);
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("EquipmentService", "purchasePotion: Failed to get user", e);
+                    callback.onFailure(e);
+                });
     }
 
     public void purchaseClothing(String userId, Equipment.ClothingType clothingType, int userLevel, EquipmentRepository.EquipmentCallback<Equipment> callback) {
@@ -103,6 +122,7 @@ public class EquipmentService
         }
 
         int price = calculateEquipmentPrice(userLevel, percentage);
+        android.util.Log.d("EquipmentService", "purchaseClothing: userId=" + userId + ", type=" + clothingType + ", price=" + price);
 
         db.collection("users").document(userId).get()
                 .addOnSuccessListener(documentSnapshot ->
@@ -110,24 +130,42 @@ public class EquipmentService
                     User user = documentSnapshot.toObject(User.class);
                     if (user != null && user.getCoins() >= price)
                     {
+                        android.util.Log.d("EquipmentService", "purchaseClothing: User has enough coins. Current: " + user.getCoins());
                         Equipment equipment = Equipment.createClothing(userId, clothingType, price);
 
                         equipmentRepository.addEquipment(equipment)
                                 .addOnSuccessListener(aVoid ->
                                 {
-                                    user.setCoins(user.getCoins() - price);
-                                    db.collection("users").document(userId).set(user)
-                                            .addOnSuccessListener(aVoid1 -> callback.onSuccess(equipment))
-                                            .addOnFailureListener(callback::onFailure);
+                                    android.util.Log.d("EquipmentService", "purchaseClothing: Equipment added to repository");
+                                    int newCoins = user.getCoins() - price;
+                                    java.util.Map<String, Object> updates = new java.util.HashMap<>();
+                                    updates.put("coins", newCoins);
+
+                                    db.collection("users").document(userId).update(updates)
+                                            .addOnSuccessListener(aVoid1 -> {
+                                                android.util.Log.d("EquipmentService", "purchaseClothing: Coins updated successfully. New: " + newCoins);
+                                                callback.onSuccess(equipment);
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                android.util.Log.e("EquipmentService", "purchaseClothing: Failed to update coins", e);
+                                                callback.onFailure(e);
+                                            });
                                 })
-                                .addOnFailureListener(callback::onFailure);
+                                .addOnFailureListener(e -> {
+                                    android.util.Log.e("EquipmentService", "purchaseClothing: Failed to add equipment", e);
+                                    callback.onFailure(e);
+                                });
                     }
                     else
                     {
+                        android.util.Log.e("EquipmentService", "purchaseClothing: Not enough coins. Has: " + (user != null ? user.getCoins() : "null user") + ", needs: " + price);
                         callback.onFailure(new Exception("Not enough coins"));
                     }
                 })
-                .addOnFailureListener(callback::onFailure);
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("EquipmentService", "purchaseClothing: Failed to get user", e);
+                    callback.onFailure(e);
+                });
     }
 
     public void activateEquipment(Equipment equipment, EquipmentRepository.EquipmentCallback<Void> callback)
@@ -148,6 +186,7 @@ public class EquipmentService
 
     public void upgradeWeapon(String userId, Equipment weapon, int userLevel, EquipmentRepository.EquipmentCallback<Equipment> callback) {
         int upgradeCost = calculateEquipmentPrice(userLevel, 60);
+        android.util.Log.d("EquipmentService", "upgradeWeapon: userId=" + userId + ", weaponId=" + weapon.getId() + ", cost=" + upgradeCost);
 
         db.collection("users").document(userId).get()
                 .addOnSuccessListener(documentSnapshot ->
@@ -155,24 +194,42 @@ public class EquipmentService
                     User user = documentSnapshot.toObject(User.class);
                     if (user != null && user.getCoins() >= upgradeCost)
                     {
+                        android.util.Log.d("EquipmentService", "upgradeWeapon: User has enough coins. Current: " + user.getCoins());
                         weapon.upgradeWeapon();
 
                         equipmentRepository.updateEquipment(weapon)
                                 .addOnSuccessListener(aVoid ->
                                 {
-                                    user.setCoins(user.getCoins() - upgradeCost);
-                                    db.collection("users").document(userId).set(user)
-                                            .addOnSuccessListener(aVoid1 -> callback.onSuccess(weapon))
-                                            .addOnFailureListener(callback::onFailure);
+                                    android.util.Log.d("EquipmentService", "upgradeWeapon: Weapon upgraded in repository");
+                                    int newCoins = user.getCoins() - upgradeCost;
+                                    java.util.Map<String, Object> updates = new java.util.HashMap<>();
+                                    updates.put("coins", newCoins);
+
+                                    db.collection("users").document(userId).update(updates)
+                                            .addOnSuccessListener(aVoid1 -> {
+                                                android.util.Log.d("EquipmentService", "upgradeWeapon: Coins updated successfully. New: " + newCoins);
+                                                callback.onSuccess(weapon);
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                android.util.Log.e("EquipmentService", "upgradeWeapon: Failed to update coins", e);
+                                                callback.onFailure(e);
+                                            });
                                 })
-                                .addOnFailureListener(callback::onFailure);
+                                .addOnFailureListener(e -> {
+                                    android.util.Log.e("EquipmentService", "upgradeWeapon: Failed to update weapon", e);
+                                    callback.onFailure(e);
+                                });
                     }
                     else
                     {
+                        android.util.Log.e("EquipmentService", "upgradeWeapon: Not enough coins. Has: " + (user != null ? user.getCoins() : "null user") + ", needs: " + upgradeCost);
                         callback.onFailure(new Exception("Not enough coins"));
                     }
                 })
-                .addOnFailureListener(callback::onFailure);
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("EquipmentService", "upgradeWeapon: Failed to get user", e);
+                    callback.onFailure(e);
+                });
     }
 
     public void getUserEquipment(String userId, EquipmentRepository.EquipmentCallback<List<Equipment>> callback)
@@ -268,4 +325,3 @@ public class EquipmentService
         });
     }
 }
-

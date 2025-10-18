@@ -39,6 +39,7 @@ public class UserDao
             values.put(DatabaseHelper.COLUMN_USER_EXPERIENCE_POINTS, user.getExperiencePoints());
             values.put(DatabaseHelper.COLUMN_USER_COINS, user.getCoins());
             values.put(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED, user.isEmailVerified() ? 1 : 0);
+            values.put(DatabaseHelper.COLUMN_USER_IS_ACTIVE, user.isActive() ? 1 : 0); // Dodajem isActive polje
             values.put(DatabaseHelper.COLUMN_USER_REGISTRATION_DATE, user.getRegistrationDate() != null ? user.getRegistrationDate().getTime() : System.currentTimeMillis());
             values.put(DatabaseHelper.COLUMN_USER_LAST_LOGIN, user.getLastLogin() != null ? user.getLastLogin().getTime() : null);
             values.put(DatabaseHelper.COLUMN_USER_ACTIVE_DAYS_STREAK, user.getActiveDaysStreak());
@@ -216,6 +217,7 @@ public class UserDao
             values.put(DatabaseHelper.COLUMN_USER_EXPERIENCE_POINTS, user.getExperiencePoints());
             values.put(DatabaseHelper.COLUMN_USER_COINS, user.getCoins());
             values.put(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED, user.isEmailVerified() ? 1 : 0);
+            values.put(DatabaseHelper.COLUMN_USER_IS_ACTIVE, user.isActive() ? 1 : 0); // Dodajem isActive polje
             values.put(DatabaseHelper.COLUMN_USER_LAST_LOGIN, user.getLastLogin() != null ? user.getLastLogin().getTime() : null);
             values.put(DatabaseHelper.COLUMN_USER_ACTIVE_DAYS_STREAK, user.getActiveDaysStreak());
             values.put(DatabaseHelper.COLUMN_USER_LAST_ACTIVITY_DAY_UPDATE, user.getLastActivityDayUpdate() != null ? user.getLastActivityDayUpdate().getTime() : null);
@@ -339,6 +341,13 @@ public class UserDao
         user.setExperiencePoints(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_EXPERIENCE_POINTS)));
         user.setCoins(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_COINS)));
         user.setEmailVerified(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_EMAIL_VERIFIED)) == 1);
+
+        // Učitaj isActive
+        int isActiveIndex = cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_IS_ACTIVE);
+        if (!cursor.isNull(isActiveIndex))
+        {
+            user.setActive(cursor.getInt(isActiveIndex) == 1);
+        }
 
         long regDate = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_USER_REGISTRATION_DATE));
         user.setRegistrationDate(new Date(regDate));

@@ -14,6 +14,7 @@ public class User {
     private int experiencePoints;
     private int coins;
     private boolean isEmailVerified;
+    private boolean isActive; // Da li je korisnik aktivirao nalog prvim loginovanjem
     private Date registrationDate;
     private Date lastLogin;
     private int activeDaysStreak;
@@ -35,6 +36,7 @@ public class User {
         this.experiencePoints = 0;
         this.coins = 0;
         this.isEmailVerified = false;
+        this.isActive = false; // Podrazumevano, nalog nije aktiviran
         this.registrationDate = new Date();
         this.activeDaysStreak = 0;
         this.lastActivityDayUpdate = null;
@@ -52,6 +54,7 @@ public class User {
     public int getExperiencePoints() { return experiencePoints; }
     public int getCoins() { return coins; }
     public boolean isEmailVerified() { return isEmailVerified; }
+    public boolean isActive() { return isActive; } // Getter za isActive
     public Date getRegistrationDate() { return registrationDate; }
     public Date getLastLogin() { return lastLogin; }
     public int getActiveDaysStreak() { return activeDaysStreak; }
@@ -69,6 +72,7 @@ public class User {
     public void setExperiencePoints(int experiencePoints) { this.experiencePoints = experiencePoints; }
     public void setCoins(int coins) { this.coins = coins; }
     public void setEmailVerified(boolean emailVerified) { isEmailVerified = emailVerified; }
+    public void setActive(boolean active) { isActive = active; } // Setter za isActive
     public void setRegistrationDate(Date registrationDate) { this.registrationDate = registrationDate; }
     public void setLastLogin(Date lastLogin) { this.lastLogin = lastLogin; }
     public void setActiveDaysStreak(int activeDaysStreak) { this.activeDaysStreak = activeDaysStreak; }

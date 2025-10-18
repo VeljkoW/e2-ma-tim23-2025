@@ -45,6 +45,9 @@ public class MainActivity extends AppCompatActivity {
     private Button calendarButton;
     private Button shopButton;
     private Button equipmentButton;
+    private Button friendsButton;
+    private Button allianceButton;
+    private Button allianceInvitesButton;
     private String currentUserId;
 
     @Override
@@ -100,6 +103,9 @@ public class MainActivity extends AppCompatActivity {
         calendarButton = findViewById(R.id.btn_calendar);
         shopButton = findViewById(R.id.buttonShop);
         equipmentButton = findViewById(R.id.buttonEquipment);
+        friendsButton = findViewById(R.id.buttonFriends);
+        allianceButton = findViewById(R.id.buttonAlliance);
+        allianceInvitesButton = findViewById(R.id.buttonAllianceInvites);
     }
 
     private void setupClickListeners() {
@@ -112,6 +118,9 @@ public class MainActivity extends AppCompatActivity {
         calendarButton.setOnClickListener(v -> startActivity(new Intent(this, CalendarActivity.class)));
         shopButton.setOnClickListener(v -> startActivity(new Intent(this, ShopActivity.class)));
         equipmentButton.setOnClickListener(v -> startActivity(new Intent(this, EquipmentManagementActivity.class)));
+        friendsButton.setOnClickListener(v -> startActivity(new Intent(this, com.example.rpgapp.ui.FriendsActivity.class)));
+        allianceButton.setOnClickListener(v -> startActivity(new Intent(this, com.example.rpgapp.ui.AllianceActivity.class)));
+        allianceInvitesButton.setOnClickListener(v -> startActivity(new Intent(this, com.example.rpgapp.ui.AllianceInvitationsActivity.class)));
     }
 
     private void openBossFight() {

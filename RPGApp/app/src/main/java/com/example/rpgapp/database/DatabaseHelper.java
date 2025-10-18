@@ -9,7 +9,7 @@ public class DatabaseHelper extends SQLiteOpenHelper
 
     // Database info
     private static final String DATABASE_NAME = "rpg_app.db";
-    private static final int DATABASE_VERSION = 4; // Increased version to add starting_power_points column
+    private static final int DATABASE_VERSION = 5; // Povećana verzija zbog dodavanja last_activity_day_update kolone
 
     // User table
     public static final String TABLE_USERS = "users";
@@ -24,6 +24,7 @@ public class DatabaseHelper extends SQLiteOpenHelper
     public static final String COLUMN_USER_EXPERIENCE_POINTS = "experience_points";
     public static final String COLUMN_USER_COINS = "coins";
     public static final String COLUMN_USER_EMAIL_VERIFIED = "email_verified";
+    public static final String COLUMN_USER_IS_ACTIVE = "is_active"; // Nova kolona za aktivnost korisnika
     public static final String COLUMN_USER_REGISTRATION_DATE = "registration_date";
     public static final String COLUMN_USER_LAST_LOGIN = "last_login";
     public static final String COLUMN_USER_ACTIVE_DAYS_STREAK = "active_days_streak";
@@ -43,6 +44,7 @@ public class DatabaseHelper extends SQLiteOpenHelper
         COLUMN_USER_EXPERIENCE_POINTS + " INTEGER DEFAULT 0, " +
         COLUMN_USER_COINS + " INTEGER DEFAULT 0, " +
         COLUMN_USER_EMAIL_VERIFIED + " INTEGER DEFAULT 0, " +
+        COLUMN_USER_IS_ACTIVE + " INTEGER DEFAULT 0, " +
         COLUMN_USER_REGISTRATION_DATE + " INTEGER, " +
         COLUMN_USER_ACTIVE_DAYS_STREAK + " INTEGER DEFAULT 0," +
         COLUMN_USER_LAST_LOGIN + " INTEGER, " +
@@ -87,6 +89,12 @@ public class DatabaseHelper extends SQLiteOpenHelper
         }
 
         if (oldVersion < 4)
+        {
+            db.execSQL("ALTER TABLE " + TABLE_USERS +
+                      " ADD COLUMN " + COLUMN_USER_IS_ACTIVE + " INTEGER DEFAULT 1");
+        }
+
+        if (oldVersion < 5)
         {
             db.execSQL("ALTER TABLE " + TABLE_USERS +
                       " ADD COLUMN " + COLUMN_USER_STARTING_POWER_POINTS + " INTEGER DEFAULT 0");

@@ -104,11 +104,15 @@ public class EquipmentManagementActivity extends AppCompatActivity
     private void loadEquipment() {
         if (currentUser == null) return;
 
+        String userId = mAuth.getCurrentUser().getUid(); // Use Firebase UID directly
+        android.util.Log.d("EquipmentManagement", "loadEquipment: Loading equipment for userId=" + userId);
+
         // Load potions
-        equipmentService.getEquipmentByType(currentUser.getId(), Equipment.EquipmentType.POTION,
+        equipmentService.getEquipmentByType(userId, Equipment.EquipmentType.POTION,
                 new EquipmentRepository.EquipmentCallback<List<Equipment>>() {
                     @Override
                     public void onSuccess(List<Equipment> result) {
+                        android.util.Log.d("EquipmentManagement", "loadEquipment: Loaded " + result.size() + " potions");
                         runOnUiThread(() -> {
                             potionsList.clear();
                             // Filtriraj samo neiskorišćene napitke
@@ -117,46 +121,53 @@ public class EquipmentManagementActivity extends AppCompatActivity
                                     potionsList.add(eq);
                                 }
                             }
+                            android.util.Log.d("EquipmentManagement", "loadEquipment: Displaying " + potionsList.size() + " usable potions");
                             potionsAdapter.setEquipmentList(potionsList);
                         });
                     }
 
                     @Override
                     public void onFailure(Exception e) {
+                        android.util.Log.e("EquipmentManagement", "loadEquipment: Failed to load potions", e);
                         runOnUiThread(() -> Toast.makeText(EquipmentManagementActivity.this,
                                 "Failed to load potions", Toast.LENGTH_SHORT).show());
                     }
                 });
 
         // Load clothing
-        equipmentService.getEquipmentByType(currentUser.getId(), Equipment.EquipmentType.CLOTHING,
+        equipmentService.getEquipmentByType(userId, Equipment.EquipmentType.CLOTHING,
                 new EquipmentRepository.EquipmentCallback<List<Equipment>>() {
                     @Override
                     public void onSuccess(List<Equipment> result) {
+                        android.util.Log.d("EquipmentManagement", "loadEquipment: Loaded " + result.size() + " clothing items");
                         runOnUiThread(() -> {
                             clothingList.clear();
                             // Filtriraj samo odeću koja može da se koristi
                             for (Equipment eq : result) {
+                                android.util.Log.d("EquipmentManagement", "Clothing: " + eq.getName() + ", canBeUsed=" + eq.canBeUsed() + ", active=" + eq.isActive() + ", remaining=" + eq.getRemainingBattles());
                                 if (eq.canBeUsed()) {
                                     clothingList.add(eq);
                                 }
                             }
+                            android.util.Log.d("EquipmentManagement", "loadEquipment: Displaying " + clothingList.size() + " usable clothing items");
                             clothingAdapter.setEquipmentList(clothingList);
                         });
                     }
 
                     @Override
                     public void onFailure(Exception e) {
+                        android.util.Log.e("EquipmentManagement", "loadEquipment: Failed to load clothing", e);
                         runOnUiThread(() -> Toast.makeText(EquipmentManagementActivity.this,
                                 "Failed to load clothing", Toast.LENGTH_SHORT).show());
                     }
                 });
 
         // Load weapons
-        equipmentService.getEquipmentByType(currentUser.getId(), Equipment.EquipmentType.WEAPON,
+        equipmentService.getEquipmentByType(userId, Equipment.EquipmentType.WEAPON,
                 new EquipmentRepository.EquipmentCallback<List<Equipment>>() {
                     @Override
                     public void onSuccess(List<Equipment> result) {
+                        android.util.Log.d("EquipmentManagement", "loadEquipment: Loaded " + result.size() + " weapons");
                         runOnUiThread(() -> {
                             weaponsList.clear();
                             weaponsList.addAll(result);
@@ -166,6 +177,7 @@ public class EquipmentManagementActivity extends AppCompatActivity
 
                     @Override
                     public void onFailure(Exception e) {
+                        android.util.Log.e("EquipmentManagement", "loadEquipment: Failed to load weapons", e);
                         runOnUiThread(() -> Toast.makeText(EquipmentManagementActivity.this,
                                 "Failed to load weapons", Toast.LENGTH_SHORT).show());
                     }

@@ -49,6 +49,7 @@ public class FirebaseUserRepository
             userData.put("experiencePoints", user.getExperiencePoints());
             userData.put("coins", user.getCoins());
             userData.put("emailVerified", user.isEmailVerified());
+            userData.put("active", user.isActive()); // Dodajem isActive polje
             userData.put("registrationDate", user.getRegistrationDate());
             userData.put("lastLogin", user.getLastLogin());
             userData.put("activeDaysStreak", user.getActiveDaysStreak());
@@ -197,6 +198,7 @@ public class FirebaseUserRepository
         updates.put("experiencePoints", user.getExperiencePoints());
         updates.put("coins", user.getCoins());
         updates.put("emailVerified", user.isEmailVerified());
+        updates.put("active", user.isActive()); // Dodajem isActive
         updates.put("lastLogin", user.getLastLogin());
         updates.put("activeDaysStreak", user.getActiveDaysStreak());
         updates.put("lastActivityDayUpdate", user.getLastActivityDayUpdate());
@@ -219,6 +221,21 @@ public class FirebaseUserRepository
             .addOnSuccessListener(aVoid -> onComplete.onResult(true))
             .addOnFailureListener(e -> {
                 e.printStackTrace();
+                onComplete.onResult(false);
+            });
+    }
+
+    public void activateUser(String userId, AuthCallback<Boolean> onComplete)
+    {
+        db.collection(COLLECTION_USERS)
+            .document(userId)
+            .update("active", true)
+            .addOnSuccessListener(aVoid -> {
+                Log.d(TAG, "User activated successfully: " + userId);
+                onComplete.onResult(true);
+            })
+            .addOnFailureListener(e -> {
+                Log.e(TAG, "Failed to activate user: " + userId, e);
                 onComplete.onResult(false);
             });
     }

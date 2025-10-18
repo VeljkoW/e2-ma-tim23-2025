@@ -146,16 +146,20 @@ public class ShopActivity extends AppCompatActivity {
         if (currentUser == null) return;
 
         Equipment.PotionType potionType = Equipment.PotionType.valueOf(item.getId());
+        String userId = mAuth.getCurrentUser().getUid(); // Use Firebase UID directly
+        Log.d(TAG, "onPotionPurchase: Starting purchase - type=" + potionType + ", price=" + item.getPrice() + ", userId=" + userId);
 
         new AlertDialog.Builder(this)
                 .setTitle("Purchase Potion")
                 .setMessage(String.format("Do you want to buy %s for %d coins?", item.getName(), item.getPrice()))
                 .setPositiveButton("Buy", (dialog, which) -> {
                     if (currentUser.getCoins() >= item.getPrice()) {
-                        equipmentService.purchasePotion(currentUser.getId(), potionType, currentUser.getLevel(),
+                        Log.d(TAG, "onPotionPurchase: User confirmed purchase");
+                        equipmentService.purchasePotion(userId, potionType, currentUser.getLevel(),
                                 new EquipmentRepository.EquipmentCallback<Equipment>() {
                                     @Override
                                     public void onSuccess(Equipment result) {
+                                        Log.d(TAG, "onPotionPurchase: Purchase successful");
                                         runOnUiThread(() -> {
                                             Toast.makeText(ShopActivity.this, "Potion purchased!", Toast.LENGTH_SHORT).show();
                                             loadUserData(); // Refresh coins
@@ -164,6 +168,7 @@ public class ShopActivity extends AppCompatActivity {
 
                                     @Override
                                     public void onFailure(Exception e) {
+                                        Log.e(TAG, "onPotionPurchase: Purchase failed", e);
                                         runOnUiThread(() -> {
                                             Toast.makeText(ShopActivity.this, "Purchase failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                                         });
@@ -181,16 +186,20 @@ public class ShopActivity extends AppCompatActivity {
         if (currentUser == null) return;
 
         Equipment.ClothingType clothingType = Equipment.ClothingType.valueOf(item.getId());
+        String userId = mAuth.getCurrentUser().getUid(); // Use Firebase UID directly
+        Log.d(TAG, "onClothingPurchase: Starting purchase - type=" + clothingType + ", price=" + item.getPrice() + ", userId=" + userId);
 
         new AlertDialog.Builder(this)
                 .setTitle("Purchase Clothing")
                 .setMessage(String.format("Do you want to buy %s for %d coins?", item.getName(), item.getPrice()))
                 .setPositiveButton("Buy", (dialog, which) -> {
                     if (currentUser.getCoins() >= item.getPrice()) {
-                        equipmentService.purchaseClothing(currentUser.getId(), clothingType, currentUser.getLevel(),
+                        Log.d(TAG, "onClothingPurchase: User confirmed purchase");
+                        equipmentService.purchaseClothing(userId, clothingType, currentUser.getLevel(),
                                 new EquipmentRepository.EquipmentCallback<Equipment>() {
                                     @Override
                                     public void onSuccess(Equipment result) {
+                                        Log.d(TAG, "onClothingPurchase: Purchase successful");
                                         runOnUiThread(() -> {
                                             Toast.makeText(ShopActivity.this, "Clothing purchased!", Toast.LENGTH_SHORT).show();
                                             loadUserData(); // Refresh coins
@@ -199,6 +208,7 @@ public class ShopActivity extends AppCompatActivity {
 
                                     @Override
                                     public void onFailure(Exception e) {
+                                        Log.e(TAG, "onClothingPurchase: Purchase failed", e);
                                         runOnUiThread(() -> {
                                             Toast.makeText(ShopActivity.this, "Purchase failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                                         });

@@ -432,4 +432,9 @@ public class UserRepository
             onComplete.onResult(success);
         });
     }
+
+    public void activateUser(String userId, AuthCallback<Boolean> onComplete) {
+        // Delegiraj poziv ka FirebaseUserRepository
+        firebaseRepository.activateUser(userId, onComplete);
+    }
 }

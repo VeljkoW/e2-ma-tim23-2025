@@ -261,21 +261,45 @@ public class BossFightActivity extends AppCompatActivity {
                     if (equipmentList == null || equipmentList.isEmpty()) {
                         tvNoItems.setVisibility(View.VISIBLE);
                     } else {
-                        tvNoItems.setVisibility(View.GONE);
+                        boolean hasActiveItems = false;
 
-                        // Display each equipped item
                         for (Equipment equipment : equipmentList) {
-                            if (equipment.isEquipped() && equipment.canBeUsed()) {
+                            // Check both equipped and active (potions use isActive)
+                            boolean isEquipmentActive = equipment.isEquipped() || equipment.isActive();
+
+                            if (isEquipmentActive && equipment.canBeUsed()) {
+                                hasActiveItems = true;
                                 View itemView = getLayoutInflater().inflate(R.layout.item_equipped, llEquippedItems, false);
                                 TextView tvItemName = itemView.findViewById(R.id.tv_item_name);
                                 TextView tvItemBonus = itemView.findViewById(R.id.tv_item_bonus);
 
                                 tvItemName.setText(equipment.getName());
-                                tvItemBonus.setText("Power Bonus: " + equipment.getPowerBonus());
+
+                                // Show appropriate bonus info based on equipment type
+                                String bonusText = "";
+                                if (equipment.getPowerBonus() > 0) {
+                                    bonusText += "Power: +" + equipment.getPowerBonus();
+                                }
+                                if (equipment.getAttackChanceBonus() > 0) {
+                                    if (!bonusText.isEmpty()) bonusText += ", ";
+                                    bonusText += "Hit Chance: +" + equipment.getAttackChanceBonus() + "%";
+                                }
+                                if (equipment.getExtraAttackChance() > 0) {
+                                    if (!bonusText.isEmpty()) bonusText += ", ";
+                                    bonusText += "Extra Attack: +" + equipment.getExtraAttackChance() + "%";
+                                }
+                                if (equipment.getCoinBonus() > 0) {
+                                    if (!bonusText.isEmpty()) bonusText += ", ";
+                                    bonusText += "Coins: +" + equipment.getCoinBonus() + "%";
+                                }
+
+                                tvItemBonus.setText(bonusText.isEmpty() ? "Active" : bonusText);
 
                                 llEquippedItems.addView(itemView);
                             }
                         }
+
+                        tvNoItems.setVisibility(hasActiveItems ? View.GONE : View.VISIBLE);
                     }
                 }
 
@@ -367,12 +391,16 @@ public class BossFightActivity extends AppCompatActivity {
         EquipmentBonuses bonuses = new EquipmentBonuses();
 
         for (Equipment equipment : equipmentList) {
-            if (equipment.isEquipped() && equipment.canBeUsed()) {
+            // Proveravamo da li je oprema equipped ILI active (napici koriste isActive)
+            boolean isEquipmentActive = equipment.isEquipped() || equipment.isActive();
+
+            if (isEquipmentActive && equipment.canBeUsed()) {
                 bonuses.powerBonus += equipment.getPowerBonus();
                 bonuses.extraAttackChance += equipment.getExtraAttackChance();
                 bonuses.coinBonus += equipment.getCoinBonus();
 
                 Log.d(TAG, "Applied bonus from " + equipment.getName() +
+                          " (Type: " + equipment.getType() + ")" +
                           " - Power: +" + equipment.getPowerBonus() +
                           ", Extra Attack: +" + equipment.getExtraAttackChance() + "%" +
                           ", Coin: +" + equipment.getCoinBonus());
@@ -832,45 +860,38 @@ public class BossFightActivity extends AppCompatActivity {
             new EquipmentRepository.EquipmentCallback<List<Equipment>>() {
                 @Override
                 public void onSuccess(List<Equipment> equipmentList) {
-                    // Count equipped items first
-                    int equippedItemsCount = 0;
+                    // Count equipped/active items first
+                    int activeItemsCount = 0;
                     for (Equipment equipment : equipmentList) {
-                        if (equipment.isEquipped()) {
-                            equippedItemsCount++;
+                        // Check both equipped and active (potions use isActive())
+                        if (equipment.isEquipped() || equipment.isActive()) {
+                            activeItemsCount++;
                         }
                     }
 
-                    // If no equipment was equipped, proceed immediately
-                    if (equippedItemsCount == 0) {
-                        Log.d(TAG, "No equipped items found, proceeding to next cleanup step");
+                    // If no equipment was equipped/active, proceed immediately
+                    if (activeItemsCount == 0) {
+                        Log.d(TAG, "No equipped/active items found, proceeding to next cleanup step");
                         onComplete.run();
                         return;
                     }
 
                     // Reset counters for this operation
                     equipmentUpdatesCompleted = 0;
-                    totalEquipmentUpdates = equippedItemsCount;
+                    totalEquipmentUpdates = activeItemsCount;
 
-                    // Process each equipped item
+                    // Process each equipped/active item
                     for (Equipment equipment : equipmentList) {
-                        if (equipment.isEquipped()) {
-                            // Unequip the item
-                            equipment.setEquipped(false);
+                        // Check both equipped and active
+                        if (equipment.isEquipped() || equipment.isActive()) {
+                            // Use useInBattle() method which handles everything correctly
+                            equipment.useInBattle();
 
-                            // Decrement remaining battles for clothing items
-                            if (equipment.getType() == Equipment.EquipmentType.CLOTHING) {
-                                int remaining = equipment.getRemainingBattles();
-                                equipment.setRemainingBattles(Math.max(0, remaining - 1));
+                            Log.d(TAG, "Equipment " + equipment.getName() + " used in battle. " +
+                                  "Type: " + equipment.getType() +
+                                  ", isUsed: " + equipment.isUsed() +
+                                  ", remainingBattles: " + equipment.getRemainingBattles());
 
-                                Log.d(TAG, "Equipment " + equipment.getName() +
-                                      " unequipped, remaining battles: " + equipment.getRemainingBattles());
-                            }
-
-                            // Mark potions as used if they were equipped
-                            if (equipment.getType() == Equipment.EquipmentType.POTION) {
-                                equipment.setUsed(true);
-                                Log.d(TAG, "Potion " + equipment.getName() + " marked as used");
-                            }
 
                             // Update equipment in database
                             equipmentRepository.updateEquipment(equipment)
