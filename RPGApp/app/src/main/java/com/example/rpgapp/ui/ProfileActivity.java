@@ -158,9 +158,12 @@ public class ProfileActivity extends AppCompatActivity
                     List<Equipment> equipmentList = new ArrayList<>();
                     for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
                         Equipment equipment = doc.toObject(Equipment.class);
-                        // Only show active/equipped equipment if viewing another user's profile
-                        if (equipment != null && (isOwnProfile || equipment.isActive() || equipment.isEquipped())) {
-                            equipmentList.add(equipment);
+                        // Filter out used equipment - only show equipment that can still be used
+                        if (equipment != null && equipment.canBeUsed()) {
+                            // For other users' profiles, only show active/equipped equipment
+                            if (isOwnProfile || equipment.isActive() || equipment.isEquipped()) {
+                                equipmentList.add(equipment);
+                            }
                         }
                     }
                     Log.d(TAG, "Equipment loaded successfully: " + equipmentList.size() + " items");

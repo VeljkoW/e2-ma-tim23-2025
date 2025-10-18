@@ -27,12 +27,13 @@ import java.util.Random;
 
 public class PreBossEquipmentActivity extends AppCompatActivity {
 
-    private RecyclerView rvClothing, rvWeapons;
+    private RecyclerView rvClothing, rvWeapons, rvPotions;
     private Button btnFightBoss;
     private ImageButton btnBack;
 
     private EquipmentAdapter clothingAdapter;
     private EquipmentAdapter weaponAdapter;
+    private EquipmentAdapter potionAdapter;
 
     private AuthService authService;
     private EquipmentRepository equipmentRepository;
@@ -75,19 +76,23 @@ public class PreBossEquipmentActivity extends AppCompatActivity {
     private void initializeViews() {
         rvClothing = findViewById(R.id.rvClothing);
         rvWeapons = findViewById(R.id.rvWeapons);
+        rvPotions = findViewById(R.id.rvPotions);
         btnFightBoss = findViewById(R.id.btnFightBoss);
         btnBack = findViewById(R.id.btnBack);
 
         // Setup RecyclerViews
         rvClothing.setLayoutManager(new GridLayoutManager(this, 3));
         rvWeapons.setLayoutManager(new GridLayoutManager(this, 3));
+        rvPotions.setLayoutManager(new GridLayoutManager(this, 3));
 
         // Setup adapters
         clothingAdapter = new EquipmentAdapter(this::onClothingClick);
         weaponAdapter = new EquipmentAdapter(this::onWeaponClick);
+        potionAdapter = new EquipmentAdapter(this::onPotionClick);
 
         rvClothing.setAdapter(clothingAdapter);
         rvWeapons.setAdapter(weaponAdapter);
+        rvPotions.setAdapter(potionAdapter);
     }
 
     private void setupClickListeners() {
@@ -191,6 +196,33 @@ public class PreBossEquipmentActivity extends AppCompatActivity {
                     );
                 }
             });
+
+        // Load potion equipment
+        equipmentRepository.getEquipmentList(
+            equipmentRepository.getEquipmentByType(currentUserId, Equipment.EquipmentType.POTION),
+            new EquipmentRepository.EquipmentCallback<List<Equipment>>() {
+                @Override
+                public void onSuccess(List<Equipment> equipmentList) {
+                    runOnUiThread(() -> {
+                        List<Equipment> availablePotions = new ArrayList<>();
+                        for (Equipment equipment : equipmentList) {
+                            if (equipment.canBeUsed()) {
+                                availablePotions.add(equipment);
+                            }
+                        }
+                        potionAdapter.setEquipmentList(availablePotions);
+                    });
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    runOnUiThread(() ->
+                        Toast.makeText(PreBossEquipmentActivity.this,
+                            "Failed to load potions: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show()
+                    );
+                }
+            });
     }
 
     private void onClothingClick(Equipment equipment) {
@@ -201,35 +233,46 @@ public class PreBossEquipmentActivity extends AppCompatActivity {
         toggleEquipmentSelection(equipment);
     }
 
+    private void onPotionClick(Equipment equipment) {
+        toggleEquipmentSelection(equipment);
+    }
+
     private void toggleEquipmentSelection(Equipment equipment) {
         // Validation checks before allowing equipment selection
         if (!canEquipItem(equipment)) {
             return; // Exit early if equipment cannot be equipped
         }
 
-        boolean newEquippedState = !equipment.isEquipped();
+        boolean newActiveState = !isEquipmentActive(equipment);
 
         // Calculate equipment effects before updating
         EquipmentEffects effects = calculateEquipmentEffects(equipment);
 
         // Apply or remove effects based on new state
-        if (newEquippedState) {
+        if (newActiveState) {
             applyEquipmentEffects(effects);
+            // Set both isActive and isEquipped for all types
+            equipment.setActive(true);
+            equipment.setEquipped(true);
         } else {
             removeEquipmentEffects(effects);
+            // Set both isActive and isEquipped to false for all types
+            equipment.setActive(false);
+            equipment.setEquipped(false);
         }
-
-        equipment.setEquipped(newEquippedState);
 
         // Update equipment in database
         equipmentRepository.updateEquipment(equipment)
-            .addOnSuccessListener(result -> updateUserAndBoss(newEquippedState, effects))
+            .addOnSuccessListener(result -> updateUserAndBoss(newActiveState, effects))
             .addOnFailureListener(e -> runOnUiThread(() -> {
                 // Revert all changes if database update failed
-                equipment.setEquipped(!newEquippedState);
-                if (newEquippedState) {
+                if (newActiveState) {
+                    equipment.setActive(false);
+                    equipment.setEquipped(false);
                     removeEquipmentEffects(effects);
                 } else {
+                    equipment.setActive(true);
+                    equipment.setEquipped(true);
                     applyEquipmentEffects(effects);
                 }
                 Toast.makeText(PreBossEquipmentActivity.this,
@@ -239,11 +282,19 @@ public class PreBossEquipmentActivity extends AppCompatActivity {
     }
 
     /**
+     * Check if equipment is active (either equipped or activated)
+     */
+    private boolean isEquipmentActive(Equipment equipment) {
+        // Check both isActive and isEquipped to handle all cases
+        return equipment.isActive() || equipment.isEquipped();
+    }
+
+    /**
      * Validates if equipment can be equipped based on current state and remaining battles
      */
     private boolean canEquipItem(Equipment equipment) {
-        // Check if trying to equip an already equipped item
-        if (equipment.isEquipped()) {
+        // Check if trying to unequip an already equipped/active item
+        if (isEquipmentActive(equipment)) {
             // Allow unequipping - this is valid
             return true;
         }
@@ -370,6 +421,7 @@ public class PreBossEquipmentActivity extends AppCompatActivity {
                             // Refresh the adapters
                             clothingAdapter.notifyDataSetChanged();
                             weaponAdapter.notifyDataSetChanged();
+                            potionAdapter.notifyDataSetChanged();
                         }))
                         .addOnFailureListener(e -> runOnUiThread(() ->
                             Toast.makeText(PreBossEquipmentActivity.this,
