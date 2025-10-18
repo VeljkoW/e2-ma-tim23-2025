@@ -79,6 +79,7 @@ public class BossService {
 
                         Boss boss = new Boss(userId, 1, 200, 200);
                         boss.setChanceTododge(dodgeChance);
+                        boss.setStartingChanceToDodge(dodgeChance); // Set the starting chance to dodge
 
                         return bossRepository.createBoss(boss).continueWith(createTask -> {
                             if (createTask.isSuccessful()) {
@@ -119,6 +120,7 @@ public class BossService {
 
                 Boss boss = new Boss(userId, newLevel, newHp, newCoins);
                 boss.setChanceTododge(dodgeChance);
+                boss.setStartingChanceToDodge(dodgeChance); // Set the starting chance to dodge
 
                 return bossRepository.createBoss(boss).continueWith(createTask -> {
                     if (createTask.isSuccessful()) {
@@ -382,6 +384,8 @@ public class BossService {
             if (dodgeTask.isSuccessful()) {
                 double newDodgeChance = dodgeTask.getResult();
                 boss.setChanceTododge(newDodgeChance);
+                // Note: We don't update startingChanceToDodge here because it should remain
+                // the original value from when the boss was first created
 
                 Log.d(TAG, "Boss reset for next fight: HP " + boss.getStartingHp() +
                       ", new dodge chance: " + newDodgeChance + ", attacks reset to 5");
