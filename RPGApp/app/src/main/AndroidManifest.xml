@@ -98,6 +98,18 @@
             android:exported="false"
             android:theme="@style/Theme.RPGApp" />
 
+        <!-- Boss Fight Activity -->
+        <activity
+            android:name=".ui.BossFightActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
+        <!-- Pre Boss Equipment Activity -->
+        <activity
+            android:name=".ui.PreBossEquipmentActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
         <!-- Shop Activity -->
         <activity
             android:name=".ui.ShopActivity"

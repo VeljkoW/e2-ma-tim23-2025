@@ -10,6 +10,7 @@ public class User {
     private int level;
     private String title;
     private int powerPoints;
+    private int startingPowerPoints; // Track original power points
     private int experiencePoints;
     private int coins;
     private boolean isEmailVerified;
@@ -31,6 +32,7 @@ public class User {
         this.level = 1;
         this.title = "Crook"; // Starting title
         this.powerPoints = 0;
+        this.startingPowerPoints = 0; // Track starting power points
         this.experiencePoints = 0;
         this.coins = 0;
         this.isEmailVerified = false;
@@ -48,6 +50,7 @@ public class User {
     public int getLevel() { return level; }
     public String getTitle() { return title; }
     public int getPowerPoints() { return powerPoints; }
+    public int getStartingPowerPoints() { return startingPowerPoints; }
     public int getExperiencePoints() { return experiencePoints; }
     public int getCoins() { return coins; }
     public boolean isEmailVerified() { return isEmailVerified; }
@@ -65,6 +68,7 @@ public class User {
     public void setLevel(int level) { this.level = level; }
     public void setTitle(String title) { this.title = title; }
     public void setPowerPoints(int powerPoints) { this.powerPoints = powerPoints; }
+    public void setStartingPowerPoints(int startingPowerPoints) { this.startingPowerPoints = startingPowerPoints; }
     public void setExperiencePoints(int experiencePoints) { this.experiencePoints = experiencePoints; }
     public void setCoins(int coins) { this.coins = coins; }
     public void setEmailVerified(boolean emailVerified) { isEmailVerified = emailVerified; }
@@ -110,10 +114,22 @@ public class User {
 
         int ppToAdd = calculatePPForLevelUp(this.level);
         this.powerPoints += ppToAdd;
+        this.startingPowerPoints = this.powerPoints; // Update starting power points to current level
 
         this.title = getTitleForLevel(this.level);
 
         return true;
+    }
+
+    /**
+     * Levels up the user and indicates if a new boss should be created
+     * @return true if user leveled up and a new boss should be spawned, false otherwise
+     */
+    public boolean levelUpAndShouldCreateBoss()
+    {
+        boolean leveledUp = levelUp();
+        // Create a boss every time the user levels up
+        return leveledUp;
     }
 
     private int calculatePPForLevelUp(int newLevel)

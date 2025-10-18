@@ -162,6 +162,18 @@ public class AuthService
         clearUserSession();
     }
 
+    /**
+     * Signs out the user and returns a Task for async handling
+     * This method provides Task-based API consistent with Firebase patterns
+     */
+    public com.google.android.gms.tasks.Task<Void> signOut() {
+        return com.google.android.gms.tasks.Tasks.call(() -> {
+            firebaseAuth.signOut();
+            clearUserSession();
+            return null;
+        });
+    }
+
     public void changePassword(String currentPassword, String newPassword, AuthCallback<AuthResult> onComplete)
     {
         FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
