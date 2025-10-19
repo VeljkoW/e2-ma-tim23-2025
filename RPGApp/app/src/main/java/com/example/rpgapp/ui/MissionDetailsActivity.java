@@ -16,6 +16,7 @@ import com.example.rpgapp.repository.UserRepository;
 import com.example.rpgapp.repository.CategoryRepository;
 import com.example.rpgapp.service.AuthService;
 import com.example.rpgapp.service.BossService;
+import com.example.rpgapp.service.AllianceBossService;
 import com.example.rpgapp.callback.AuthCallback;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseUser;
@@ -253,6 +254,10 @@ public class MissionDetailsActivity extends AppCompatActivity {
                     currentMission.setStatus(selectedStatus);
                     missionRepository.updateMission(missionId, currentMission);
                     awardXpForMission(); // Promenjeno - sada prosleđuje celu misiju
+
+                    // Damage alliance boss when mission is completed
+                    damageAllianceBossFromMissionCompletion();
+
                     setResult(RESULT_OK);
                     Toast.makeText(this, "Mission completed!", Toast.LENGTH_SHORT).show();
                     break;
@@ -544,9 +549,100 @@ public class MissionDetailsActivity extends AppCompatActivity {
         });
     }
 
+    private void damageAllianceBossFromMissionCompletion() {
+        // Get the current user
+        authService.getCurrentUser(new AuthCallback<User>() {
+            @Override
+            public void onResult(User user) {
+                if (user != null) {
+                    // Calculate damage based on mission difficulty and importance
+                    int damageAmount = calculateAllianceBossDamageFromMission();
+
+                    // Log the damage calculation
+                    android.util.Log.d("MissionDetails", "Calculated damage for alliance boss from mission completion: " + damageAmount);
+
+                    // Create custom damage method for exact HP amounts
+                    damageAllianceBossCustomAmount(user.getId(), damageAmount);
+                } else {
+                    android.util.Log.e("MissionDetails", "User is null - cannot deal damage to alliance boss");
+                }
+            }
+        });
+    }
+
+    private void damageAllianceBossCustomAmount(String userId, int damage) {
+        // Find user's alliance and damage boss with exact amount
+        com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("alliances")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    String userAllianceId = null;
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        try {
+                            java.util.List<String> memberIds = (java.util.List<String>) doc.get("memberIds");
+                            if (memberIds != null && memberIds.contains(userId)) {
+                                userAllianceId = doc.getId();
+                                break;
+                            }
+                        } catch (Exception e) {
+                            android.util.Log.w("MissionDetails", "Error checking alliance", e);
+                        }
+                    }
+
+                    if (userAllianceId != null) {
+                        // Find alive alliance boss and damage it
+                        com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("allianceBosses")
+                                .whereEqualTo("allianceId", userAllianceId)
+                                .whereEqualTo("status", "ALIVE")
+                                .get()
+                                .addOnSuccessListener(bossQuery -> {
+                                    if (!bossQuery.isEmpty()) {
+                                        com.google.firebase.firestore.DocumentSnapshot bossDoc = bossQuery.getDocuments().get(0);
+                                        String bossId = bossDoc.getId();
+                                        Long currentHpLong = (Long) bossDoc.get("currentHp");
+                                        int currentHp = currentHpLong != null ? currentHpLong.intValue() : 0;
+                                        int newHp = Math.max(0, currentHp - damage);
+
+                                        // Update boss HP
+                                        com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("allianceBosses")
+                                                .document(bossId)
+                                                .update("currentHp", newHp)
+                                                .addOnSuccessListener(aVoid -> {
+                                                    android.util.Log.d("MissionDetails", "Alliance boss damaged: " + currentHp + " -> " + newHp + " (damage: " + damage + ")");
+                                                    // Mark as dead if HP reaches 0
+                                                    if (newHp <= 0) {
+                                                        com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("allianceBosses")
+                                                                .document(bossId)
+                                                                .update("status", "DEAD", "dateOfLastDyingOrFailing", new java.util.Date());
+                                                    }
+                                                });
+                                    }
+                                });
+                    }
+                });
+    }
+
+    private int calculateAllianceBossDamageFromMission() {
+        // Default to 1 HP damage for easy/normal missions
+        int damage = 1;
+
+        // Check if mission qualifies for higher damage (4 HP)
+        // HARD/EXTREMELY_HARD difficulty OR EXTREMELY_IMPORTANT importance = 4 damage
+        if ((currentMission.getDifficulty() == Mission.Difficulty.HARD ||
+             currentMission.getDifficulty() == Mission.Difficulty.EXTREMELY_HARD) ||
+            (currentMission.getImportance() == Mission.Importance.EXTREMELY_IMPORTANT)) {
+            damage = 4;
+        }
+
+        android.util.Log.d("MissionDetails", "Mission damage calculation: Difficulty=" + currentMission.getDifficulty() +
+                          ", Importance=" + currentMission.getImportance() + ", Damage=" + damage);
+
+        return damage;
+    }
+
     @Override
     public boolean onSupportNavigateUp() {
         onBackPressed();
         return true;
     }
 }
+
