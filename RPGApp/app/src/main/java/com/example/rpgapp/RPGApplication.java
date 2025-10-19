@@ -61,6 +61,8 @@ public class RPGApplication extends Application
         // Clean up old alliance bosses (14+ days old)
         cleanupOldAllianceBosses();
 
+        // Check for dead bosses that might need badge awarding
+        checkDeadBossesForBadgeAwarding();
     }
 
     /**
@@ -142,9 +144,154 @@ public class RPGApplication extends Application
                 )
                 .addOnSuccessListener(aVoid -> {
                     Log.d(TAG, "✅ Successfully updated boss " + bossId + " status to " + newStatus);
+
+                    // Award badges if boss is dead
+                    if ("DEAD".equals(newStatus)) {
+                        awardBadgesForDeadBoss(bossId, allianceId);
+                    }
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "❌ Failed to update boss " + bossId + " status to " + newStatus, e);
+                });
+    }
+
+    /**
+     * Award special boss badges to all alliance members when a boss is defeated
+     */
+    private void awardBadgesForDeadBoss(String bossId, String allianceId) {
+        Log.d(TAG, "Awarding badges for defeated boss " + bossId + " in alliance " + allianceId);
+
+        if (allianceId == null) {
+            Log.w(TAG, "No alliance ID found for boss " + bossId + ", cannot award badges");
+            return;
+        }
+
+        // First, get all members of the alliance
+        FirebaseFirestore.getInstance().collection("alliances")
+                .document(allianceId)
+                .get()
+                .addOnSuccessListener(allianceDoc -> {
+                    if (!allianceDoc.exists()) {
+                        Log.w(TAG, "Alliance " + allianceId + " not found for boss " + bossId);
+                        return;
+                    }
+
+                    java.util.List<String> memberIds = (java.util.List<String>) allianceDoc.get("memberIds");
+                    if (memberIds == null || memberIds.isEmpty()) {
+                        Log.w(TAG, "No members found in alliance " + allianceId);
+                        return;
+                    }
+
+                    Log.d(TAG, "Found " + memberIds.size() + " members in alliance " + allianceId);
+
+                    // Award badge to each member
+                    for (String memberId : memberIds) {
+                        awardSpecialBossBadge(memberId, bossId);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to get alliance members for " + allianceId, e);
+                });
+    }
+
+    /**
+     * Award a special boss badge to a specific user
+     */
+    private void awardSpecialBossBadge(String userId, String bossId) {
+        Log.d(TAG, "Awarding special boss badge to user " + userId + " for boss " + bossId);
+
+        // Check if this user already has a badge for this boss
+        FirebaseFirestore.getInstance().collection("badges")
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("allianceBossId", bossId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        Log.d(TAG, "User " + userId + " already has badge for boss " + bossId + ", skipping");
+                        return;
+                    }
+
+                    // Create the badge
+                    java.util.Map<String, Object> badge = new java.util.HashMap<>();
+                    badge.put("id", "special_boss_" + bossId + "_" + userId);
+                    badge.put("name", "Alliance Boss Slayer #" + bossId.substring(0, Math.min(6, bossId.length())));
+                    badge.put("description", "Defeated a powerful alliance boss together with your alliance members!");
+                    badge.put("iconResource", "https://cdn-icons-png.flaticon.com/512/856/856940.png");
+                    badge.put("userId", userId);
+                    badge.put("allianceBossId", bossId);
+                    badge.put("dateAwarded", new java.util.Date());
+
+                    // Save the badge to Firestore
+                    FirebaseFirestore.getInstance().collection("badges")
+                            .document((String) badge.get("id"))
+                            .set(badge)
+                            .addOnSuccessListener(aVoid -> {
+                                Log.d(TAG, "✅ Successfully awarded special boss badge to user " + userId);
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "❌ Failed to award badge to user " + userId + " for boss " + bossId, e);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to check existing badges for user " + userId, e);
+                });
+    }
+
+    /**
+     * Check for dead bosses that might need badge awarding
+     */
+    private void checkDeadBossesForBadgeAwarding() {
+        Log.d(TAG, "Checking for DEAD alliance bosses that need badge awarding...");
+
+        FirebaseFirestore.getInstance().collection("allianceBosses")
+                .whereEqualTo("status", "DEAD")
+                .get()
+                .addOnSuccessListener(deadBossesSnapshot -> {
+                    Log.d(TAG, "Found " + deadBossesSnapshot.size() + " DEAD alliance bosses");
+
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : deadBossesSnapshot.getDocuments()) {
+                        String bossId = doc.getId();
+                        String allianceId = doc.getString("allianceId");
+
+                        Log.d(TAG, "Checking DEAD boss " + bossId + " (alliance: " + allianceId + ") for badge awarding");
+
+                        // Check if badges have already been awarded for this boss
+                        checkAndAwardBadgesForDeadBoss(bossId, allianceId);
+                    }
+
+                    if (deadBossesSnapshot.isEmpty()) {
+                        Log.d(TAG, "No DEAD alliance bosses found");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to query DEAD alliance bosses", e);
+                });
+    }
+
+    /**
+     * Check if badges have been awarded for a dead boss, and award them if not
+     */
+    private void checkAndAwardBadgesForDeadBoss(String bossId, String allianceId) {
+        if (allianceId == null) {
+            Log.w(TAG, "No alliance ID found for DEAD boss " + bossId + ", cannot check badges");
+            return;
+        }
+
+        // Check if any badges exist for this boss
+        FirebaseFirestore.getInstance().collection("badges")
+                .whereEqualTo("allianceBossId", bossId)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(badgeSnapshot -> {
+                    if (badgeSnapshot.isEmpty()) {
+                        Log.d(TAG, "No badges found for DEAD boss " + bossId + ", awarding badges now");
+                        awardBadgesForDeadBoss(bossId, allianceId);
+                    } else {
+                        Log.d(TAG, "Badges already exist for DEAD boss " + bossId + ", skipping");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to check existing badges for boss " + bossId, e);
                 });
     }
 }
