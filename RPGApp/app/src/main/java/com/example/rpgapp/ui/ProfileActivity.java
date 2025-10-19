@@ -17,7 +17,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.rpgapp.R;
+import com.example.rpgapp.adapter.BadgeAdapter;
 import com.example.rpgapp.adapter.EquipmentAdapter;
+import com.example.rpgapp.model.Badge;
 import com.example.rpgapp.model.Equipment;
 import com.example.rpgapp.model.User;
 import com.example.rpgapp.repository.EquipmentRepository;
@@ -58,6 +60,7 @@ public class ProfileActivity extends AppCompatActivity
     private View statsGrid;
 
     private EquipmentAdapter equipmentAdapter;
+    private BadgeAdapter badgeAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,8 +118,13 @@ public class ProfileActivity extends AppCompatActivity
 
     private void setupRecyclerViews()
     {
+        // Setup badges RecyclerView with BadgeAdapter
         rvBadges.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        rvBadges.setAdapter(new EmptyAdapter());
+        badgeAdapter = new BadgeAdapter(badge -> {
+            // Show badge details when clicked
+            showBadgeDetails(badge);
+        });
+        rvBadges.setAdapter(badgeAdapter);
 
         // Setup equipment RecyclerView with new adapter
         rvEquipment.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
@@ -141,6 +149,7 @@ public class ProfileActivity extends AppCompatActivity
                             displayUserProfile();
                             generateQRCode(viewedUserId);
                             loadUserEquipment(viewedUserId);
+                            loadUserBadges(viewedUserId);
                             // Update UI after user data is loaded so we can use username in QR title
                             updateUIForProfileType();
                         }
@@ -176,6 +185,38 @@ public class ProfileActivity extends AppCompatActivity
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Failed to load equipment", e);
                     Toast.makeText(ProfileActivity.this, "Failed to load equipment", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void loadUserBadges(String userId) {
+        Log.d(TAG, "Loading badges for user: " + userId);
+        db.collection("badges")
+                .whereEqualTo("userId", userId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Badge> badgeList = new ArrayList<>();
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        Badge badge = doc.toObject(Badge.class);
+                        if (badge != null) {
+                            badgeList.add(badge);
+                        }
+                    }
+                    Log.d(TAG, "Badges loaded successfully: " + badgeList.size() + " badges");
+
+                    // Update badge count
+                    tvBadgeCount.setText(String.valueOf(badgeList.size()));
+
+                    // Update badge adapter
+                    if (!badgeList.isEmpty()) {
+                        badgeAdapter.setBadges(badgeList);
+                    } else {
+                        Log.d(TAG, "No badges found for user");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to load badges", e);
+                    Toast.makeText(ProfileActivity.this, "Failed to load badges", Toast.LENGTH_SHORT).show();
+                    tvBadgeCount.setText("0");
                 });
     }
 
@@ -365,6 +406,22 @@ public class ProfileActivity extends AppCompatActivity
 
         new AlertDialog.Builder(this)
                 .setTitle("Equipment Details")
+                .setMessage(details.toString())
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private void showBadgeDetails(Badge badge) {
+        StringBuilder details = new StringBuilder();
+        details.append("Name: ").append(badge.getName()).append("\n\n");
+        details.append("Description: ").append(badge.getDescription()).append("\n");
+
+        if (badge.getAllianceBossId() != null && !badge.getAllianceBossId().isEmpty()) {
+            details.append("\nEarned from: Alliance Boss Battle");
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Badge Details")
                 .setMessage(details.toString())
                 .setPositiveButton("OK", null)
                 .show();

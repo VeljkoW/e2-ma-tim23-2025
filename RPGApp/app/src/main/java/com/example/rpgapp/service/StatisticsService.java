@@ -7,6 +7,8 @@ import com.example.rpgapp.model.Category;
 import com.example.rpgapp.model.Mission;
 import com.example.rpgapp.model.User;
 import com.example.rpgapp.model.UserStatistics;
+import com.example.rpgapp.model.AllianceBoss;
+import com.example.rpgapp.model.Alliance;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -281,10 +283,74 @@ public class StatisticsService {
                     statistics.setCurrentTaskStreak(currentStreak);
                     statistics.setLongestTaskStreak(longestStreak);
 
-                    callback.onResult(statistics);
+                    // Učitaj podatke o AllianceBoss-ovima
+                    loadAllianceBossStatistics(userId, statistics, callback);
                 })
                 .addOnFailureListener(e -> {
                     callback.onResult(new UserStatistics(userId));
+                });
+    }
+
+    private void loadAllianceBossStatistics(String userId, UserStatistics statistics, AuthCallback<UserStatistics> callback) {
+        // Prvo pronađi sve saveze u kojima je korisnik član
+        db.collection("alliances")
+                .get()
+                .addOnSuccessListener(allianceSnapshots -> {
+                    List<String> userAllianceIds = new ArrayList<>();
+
+                    // Pronađi sve saveze gde je korisnik član
+                    for (QueryDocumentSnapshot doc : allianceSnapshots) {
+                        Alliance alliance = doc.toObject(Alliance.class);
+                        if (alliance != null && alliance.getMemberIds() != null &&
+                            alliance.getMemberIds().contains(userId)) {
+                            userAllianceIds.add(alliance.getId());
+                        }
+                    }
+
+                    if (userAllianceIds.isEmpty()) {
+                        // Korisnik nije u nijednom savezu
+                        statistics.setSpecialMissionsStarted(0);
+                        statistics.setSpecialMissionsCompleted(0);
+                        callback.onResult(statistics);
+                        return;
+                    }
+
+                    // Sada učitaj sve AllianceBoss-ove za te saveze
+                    db.collection("allianceBosses")
+                            .get()
+                            .addOnSuccessListener(bossSnapshots -> {
+                                int totalStarted = 0;
+                                int totalCompleted = 0;
+
+                                for (QueryDocumentSnapshot doc : bossSnapshots) {
+                                    AllianceBoss boss = doc.toObject(AllianceBoss.class);
+                                    if (boss != null && boss.getAllianceId() != null &&
+                                        userAllianceIds.contains(boss.getAllianceId())) {
+                                        // Ovo je boss iz saveza u kojem je korisnik bio član
+                                        totalStarted++;
+
+                                        if (boss.getStatus() == AllianceBoss.Status.DEAD) {
+                                            totalCompleted++;
+                                        }
+                                    }
+                                }
+
+                                statistics.setSpecialMissionsStarted(totalStarted);
+                                statistics.setSpecialMissionsCompleted(totalCompleted);
+                                callback.onResult(statistics);
+                            })
+                            .addOnFailureListener(e -> {
+                                // Ako ne uspe učitavanje boss-ova, postavi na 0
+                                statistics.setSpecialMissionsStarted(0);
+                                statistics.setSpecialMissionsCompleted(0);
+                                callback.onResult(statistics);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    // Ako ne uspe učitavanje saveza, postavi na 0
+                    statistics.setSpecialMissionsStarted(0);
+                    statistics.setSpecialMissionsCompleted(0);
+                    callback.onResult(statistics);
                 });
     }
 }
