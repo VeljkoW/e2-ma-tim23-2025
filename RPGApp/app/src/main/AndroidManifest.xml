@@ -5,6 +5,7 @@
     <!-- Internet permission za Firebase -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
         android:name=".RPGApplication"
@@ -145,6 +146,13 @@
             android:name=".ui.AllianceInvitationsActivity"
             android:exported="false"
             android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- QR Scanner Activity -->
+        <activity
+            android:name=".ui.QRScannerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar"
+            android:screenOrientation="portrait" />
 
     </application>
 
