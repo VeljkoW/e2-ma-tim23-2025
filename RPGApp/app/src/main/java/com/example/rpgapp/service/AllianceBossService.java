@@ -247,6 +247,117 @@ public class AllianceBossService {
     }
 
     /**
+     * Damages alliance boss by 2 HP when a user makes a shop purchase
+     * Checks if user is in an alliance with an alive boss and damages it
+     */
+    public void damageAllianceBossFromShopPurchase(String userId) {
+        Log.d(TAG, "damageAllianceBossFromShopPurchase: Checking for user " + userId);
+
+        // Step 1: Find if user is in any alliance
+        com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("alliances")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    String userAllianceId = null;
+
+                    // Search through all alliances to find the one containing this user
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        try {
+                            java.util.List<String> memberIds = (java.util.List<String>) doc.get("memberIds");
+                            if (memberIds != null && memberIds.contains(userId)) {
+                                userAllianceId = doc.getId();
+                                Log.d(TAG, "damageAllianceBossFromShopPurchase: User found in alliance " + userAllianceId);
+                                break;
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "damageAllianceBossFromShopPurchase: Error checking alliance " + doc.getId(), e);
+                        }
+                    }
+
+                    if (userAllianceId != null) {
+                        // Step 2: Check if this alliance has an alive boss
+                        checkForAliveBossAndDamageFromShop(userAllianceId);
+                    } else {
+                        Log.d(TAG, "damageAllianceBossFromShopPurchase: User is not in any alliance");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "damageAllianceBossFromShopPurchase: Failed to load alliances", e);
+                });
+    }
+
+    /**
+     * Checks if the alliance has an alive boss and damages it by 2 HP
+     */
+    private void checkForAliveBossAndDamageFromShop(String allianceId) {
+        Log.d(TAG, "checkForAliveBossAndDamageFromShop: Checking alliance " + allianceId);
+
+        allianceBossRepository.getAliveAllianceBossesByAllianceId(allianceId)
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        // Found an alive boss - damage it
+                        com.google.firebase.firestore.DocumentSnapshot bossDoc = querySnapshot.getDocuments().get(0);
+                        AllianceBoss boss = bossDoc.toObject(AllianceBoss.class);
+
+                        if (boss != null && boss.isAlive()) {
+                            boss.setId(bossDoc.getId());
+                            damageAllianceBossFromShop(boss);
+                        }
+                    } else {
+                        Log.d(TAG, "checkForAliveBossAndDamageFromShop: No alive boss found for alliance " + allianceId);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "checkForAliveBossAndDamageFromShop: Failed to check for alive boss", e);
+                });
+    }
+
+    /**
+     * Damages the alliance boss by 2 HP and updates it in the database
+     */
+    private void damageAllianceBossFromShop(AllianceBoss boss) {
+        int newHp = Math.max(0, boss.getCurrentHp() - 2); // Damage by 2, minimum 0
+        int originalHp = boss.getCurrentHp();
+
+        Log.d(TAG, "damageAllianceBossFromShop: Damaging boss " + boss.getId() + " from " + originalHp + " HP to " + newHp + " HP");
+
+        // Update the boss HP in the database
+        com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("allianceBosses")
+                .document(boss.getId())
+                .update("currentHp", newHp)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "damageAllianceBossFromShop: Successfully damaged alliance boss! HP: " + originalHp + " -> " + newHp);
+
+                    // Check if boss died (HP reached 0)
+                    if (newHp <= 0) {
+                        killAllianceBossFromShop(boss);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "damageAllianceBossFromShop: Failed to update boss HP", e);
+                });
+    }
+
+    /**
+     * Marks the alliance boss as dead when its HP reaches 0
+     */
+    private void killAllianceBossFromShop(AllianceBoss boss) {
+        Log.d(TAG, "killAllianceBossFromShop: Boss " + boss.getId() + " has been defeated!");
+
+        com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("allianceBosses")
+                .document(boss.getId())
+                .update(
+                    "status", AllianceBoss.Status.DEAD,
+                    "dateOfLastDyingOrFailing", new java.util.Date()
+                )
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "killAllianceBossFromShop: Boss marked as dead in database");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "killAllianceBossFromShop: Failed to mark boss as dead", e);
+                });
+    }
+
+    /**
      * Result class for alliance boss creation operations
      */
     public static class CreateAllianceBossResult {

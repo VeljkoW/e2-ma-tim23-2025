@@ -18,6 +18,7 @@ public class BossService {
     private final BossRepository bossRepository;
     private final MissionRepository missionRepository;
     private final UserRepository userRepository;
+    private final AllianceBossService allianceBossService;
     private final Random random;
 
     public BossService(Context context) {
@@ -27,6 +28,7 @@ public class BossService {
             this.bossRepository = new BossRepository();
             this.missionRepository = new MissionRepository(context);
             this.userRepository = new UserRepository(context);
+            this.allianceBossService = new AllianceBossService(context);
             this.random = new Random();
 
             Log.d(TAG, "BossService successfully initialized");
@@ -308,6 +310,15 @@ public class BossService {
                     int newHp = Math.max(0, boss.getHp() - damageDealt);
                     boss.setHp(newHp);
                     Log.d(TAG, "Hit successful! Dealt " + damageDealt + " damage. Boss HP: " + boss.getHp() + " -> " + newHp);
+
+                    // If hit was successful on regular boss, also damage alliance boss by 2 HP
+                    try {
+                        allianceBossService.damageAllianceBossFromShopPurchase(userId);
+                        Log.d(TAG, "Alliance boss damage check completed for user: " + userId);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Failed to damage alliance boss for user " + userId + ": " + e.getMessage());
+                        // Don't fail the regular boss attack if alliance boss damage fails
+                    }
                 } else {
                     Log.d(TAG, "Boss dodged the attack! No damage dealt.");
                 }
