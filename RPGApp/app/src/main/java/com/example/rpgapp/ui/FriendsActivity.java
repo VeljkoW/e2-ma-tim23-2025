@@ -78,9 +78,16 @@ public class FriendsActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progress_bar);
         emptyTextView = findViewById(R.id.empty_text_view);
         btnBack = findViewById(R.id.btnBack);
+        ImageButton btnScanQR = findViewById(R.id.btnScanQR);
 
         // Setup back button
         btnBack.setOnClickListener(v -> finish());
+
+        // Setup QR scan button
+        btnScanQR.setOnClickListener(v -> {
+            Intent intent = new Intent(FriendsActivity.this, QRScannerActivity.class);
+            startActivity(intent);
+        });
 
         // Postavi naslov
         if (getSupportActionBar() != null) {

@@ -43,4 +43,10 @@
     <!-- UI Element Colors -->
     <color name="coin_color">#FFD700</color>
     <color name="secondary_button_color">#757575</color>
+
+    <!-- QR Scanner Colors -->
+    <color name="zxing_custom_viewfinder_laser">#FFD700</color>
+    <color name="zxing_custom_viewfinder_mask">#60000000</color>
+    <color name="zxing_custom_possible_result_points">#c0ffbd21</color>
+    <color name="zxing_custom_result_view">#b0000000</color>
 </resources>

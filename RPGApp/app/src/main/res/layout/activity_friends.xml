@@ -34,9 +34,14 @@
             android:textColor="@android:color/white"
             android:gravity="center"/>
 
-        <View
+        <ImageButton
+            android:id="@+id/btnScanQR"
             android:layout_width="48dp"
-            android:layout_height="48dp"/>
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_camera"
+            android:contentDescription="Scan QR Code"
+            android:tint="@android:color/white"/>
     </LinearLayout>
 
     <com.google.android.material.tabs.TabLayout
