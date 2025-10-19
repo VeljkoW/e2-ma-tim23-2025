@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/background_color"
+    tools:context=".MainActivity">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:title="RPG App"
+        app:titleTextColor="@android:color/white" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="24dp">
+
+            <!-- Boss Fight Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Boss Fight"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_text"
+                android:gravity="center"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/btn_boss_fight"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:text="Fight Boss"
+                android:textSize="18sp"
+                android:backgroundTint="@color/boss_fight_color"
+                android:textColor="@android:color/white"
+                android:layout_marginBottom="16dp"
+                android:drawableLeft="@drawable/boss_placeholder"
+                android:drawablePadding="8dp" />
+
+            <Button
+                android:id="@+id/btn_spawn_boss"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:text="Spawn New Boss"
+                android:textSize="16sp"
+                android:backgroundTint="@color/primary_color"
+                android:textColor="@android:color/white"
+                android:layout_marginBottom="32dp"
+                android:drawableLeft="@drawable/ic_badge"
+                android:drawablePadding="8dp" />
+
+            <!-- Missions Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Missions"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_text"
+                android:gravity="center"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/btn_create_mission"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Create Mission"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"
+                android:drawableLeft="@drawable/ic_badge"
+                android:drawablePadding="8dp" />
+
+            <Button
+                android:id="@+id/btn_view_missions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="View Missions"
+                android:textSize="16sp"
+                android:layout_marginBottom="24dp"
+                android:drawableLeft="@drawable/ic_list"
+                android:drawablePadding="8dp" />
+
+            <!-- Categories Section -->
+
+            <Button
+                android:id="@+id/btn_calendar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Calendar"
+                android:textSize="16sp"
+                android:drawableLeft="@drawable/ic_calendar"
+                android:drawablePadding="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Categories"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_text"
+                android:gravity="center"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/btn_create_category"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Create Category"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"
+                android:drawableLeft="@drawable/color_circle"
+                android:drawablePadding="8dp" />
+
+            <Button
+                android:id="@+id/btn_view_categories"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="View Categories"
+                android:textSize="16sp"
+                android:layout_marginBottom="24dp"
+                android:drawableLeft="@drawable/ic_list"
+                android:drawablePadding="8dp" />
+
+            <!-- Shop Section -->
+            <Button
+                android:id="@+id/buttonShop"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🛒 Shop"
+                style="@style/Widget.Material3.Button"
+                android:layout_marginTop="16dp" />
+
+            <!-- Equipment Section -->
+            <Button
+                android:id="@+id/buttonEquipment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="⚔️ My Equipment"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_marginTop="16dp" />
+
+            <!-- Friends & Alliance Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Social"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_text"
+                android:gravity="center"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/buttonFriends"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="👥 Friends"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"
+                android:drawableLeft="@drawable/ic_badge"
+                android:drawablePadding="8dp" />
+
+            <Button
+                android:id="@+id/buttonAlliance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🛡️ Alliance"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"
+                android:drawableLeft="@drawable/ic_badge"
+                android:drawablePadding="8dp" />
+
+            <Button
+                android:id="@+id/buttonAllianceInvites"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📩 Alliance Invites"
+                android:textSize="16sp"
+                android:layout_marginBottom="24dp"
+                android:drawableLeft="@drawable/ic_badge"
+                android:drawablePadding="8dp" />
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Internet permission za Firebase -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <application
+        android:name=".RPGApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.RPGApp"
+        tools:targetApi="31">
+        <activity
+            android:name=".ui.LoginActivity"
+            android:exported="true"
+            android:theme="@style/Theme.RPGApp.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Register Activity -->
+        <activity
+            android:name=".ui.RegisterActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Main Activity -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
+
+        <!-- Profile Activity -->
+        <activity
+            android:name=".ui.ProfileActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Statistics Activity -->
+        <activity
+            android:name=".ui.StatisticsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Mission Creation Activity -->
+        <activity
+            android:name=".ui.MissionCreationActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Missions List Activity -->
+        <activity
+            android:name=".ui.MissionsListActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
+        <!-- Mission Details Activity -->
+        <activity
+            android:name=".ui.MissionDetailsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
+        <!-- Mission Edit Activity -->
+        <activity
+            android:name=".ui.MissionEditActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Category Creation Activity -->
+        <activity
+            android:name=".ui.CategoryCreationActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Categories List Activity -->
+        <activity
+            android:name=".ui.CategoriesListActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
+        <!-- Category Detail Activity -->
+        <activity
+            android:name=".ui.CategoryDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
+        <!-- Calendar Activity -->
+        <activity
+            android:name=".ui.CalendarActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
+        <!-- Boss Fight Activity -->
+        <activity
+            android:name=".ui.BossFightActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
+        <!-- Pre Boss Equipment Activity -->
+        <activity
+            android:name=".ui.PreBossEquipmentActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Shop Activity -->
+        <activity
+            android:name=".ui.ShopActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Equipment Management Activity -->
+        <activity
+            android:name=".ui.EquipmentManagementActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Friends Activity -->
+        <activity
+            android:name=".ui.FriendsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp" />
+
+        <!-- Alliance Activity -->
+        <activity
+            android:name=".ui.AllianceActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Alliance Chat Activity -->
+        <activity
+            android:name=".ui.AllianceChatActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- Alliance Invitations Activity -->
+        <activity
+            android:name=".ui.AllianceInvitationsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar" />
+
+        <!-- QR Scanner Activity -->
+        <activity
+            android:name=".ui.QRScannerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPGApp.NoActionBar"
+            android:screenOrientation="portrait" />
+
+    </application>
+
+</manifest>

@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_color"
+    tools:context=".ui.BossFightActivity">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <!-- Boss Header -->
+            <TextView
+                android:id="@+id/tv_boss_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Boss Level 1"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="@color/boss_fight_color"
+                android:gravity="center"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tv_boss_level"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Level 1"
+                android:textSize="20sp"
+                android:textColor="@color/primary_text"
+                android:gravity="center"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Boss Image with Animation Container -->
+            <RelativeLayout
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_marginBottom="24dp">
+
+                <ImageView
+                    android:id="@+id/iv_boss_image"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:layout_centerInParent="true"
+                    android:src="@drawable/boss_placeholder"
+                    android:contentDescription="Boss Image" />
+
+                <!-- Damage Indicator -->
+                <TextView
+                    android:id="@+id/tv_damage_indicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="-50"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/error_color"
+                    android:visibility="gone"
+                    android:elevation="10dp" />
+
+                <!-- Miss Indicator -->
+                <TextView
+                    android:id="@+id/tv_miss_indicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="MISS!"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/warning_color"
+                    android:visibility="gone"
+                    android:elevation="10dp" />
+
+            </RelativeLayout>
+
+            <!-- HP Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Boss Health Points"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_text"
+                android:gravity="center"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tv_boss_hp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="200 / 200 HP"
+                android:textSize="16sp"
+                android:textColor="@color/primary_text"
+                android:gravity="center"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Red HP Progress Bar -->
+            <ProgressBar
+                android:id="@+id/pb_boss_hp"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="20dp"
+                android:max="100"
+                android:progress="100"
+                android:progressTint="@color/hp_bar_color"
+                android:progressBackgroundTint="@color/hp_bar_background"
+                android:layout_marginBottom="24dp" />
+
+            <!-- User Power Points Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/form_background_light"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⚡ Your Power Points"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/primary_text"
+                    android:gravity="center"
+                    android:layout_marginBottom="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Current:"
+                        android:textSize="14sp"
+                        android:textColor="@color/primary_text" />
+
+                    <TextView
+                        android:id="@+id/tv_user_current_power"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="150"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/power_points_color" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Base:"
+                        android:textSize="14sp"
+                        android:textColor="@color/secondary_text" />
+
+                    <TextView
+                        android:id="@+id/tv_user_base_power"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="100"
+                        android:textSize="14sp"
+                        android:textColor="@color/secondary_text" />
+
+                </LinearLayout>
+
+                <!-- Blue Power Points Progress Bar -->
+                <ProgressBar
+                    android:id="@+id/pb_user_power"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="16dp"
+                    android:max="100"
+                    android:progress="75"
+                    android:progressTint="@color/power_points_color"
+                    android:progressBackgroundTint="@color/power_points_background" />
+
+            </LinearLayout>
+
+            <!-- Equipped Items Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/form_background_light"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🛡️ Equipped Items"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/primary_text"
+                    android:gravity="center"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Equipped Items Container -->
+                <LinearLayout
+                    android:id="@+id/ll_equipped_items"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- No Items Message (shown when no items equipped) -->
+                    <TextView
+                        android:id="@+id/tv_no_items"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="No items equipped"
+                        android:textSize="14sp"
+                        android:textColor="@color/secondary_text"
+                        android:gravity="center"
+                        android:padding="16dp"
+                        android:visibility="visible" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Boss Stats Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/form_background_light"
+                android:padding="16dp"
+                android:layout_marginBottom="24dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Boss Information"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/primary_text"
+                    android:gravity="center"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:id="@+id/tv_attacks_remaining"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Attacks Remaining: 5"
+                    android:textSize="16sp"
+                    android:textColor="@color/primary_text"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/tv_hit_chance"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Hit Chance: 75.0%"
+                    android:textSize="16sp"
+                    android:textColor="@color/success_color"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/tv_dodge_chance"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Boss Dodge Chance: 25.0%"
+                    android:textSize="16sp"
+                    android:textColor="@color/warning_color"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/tv_coin_reward"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Coin Reward: 200"
+                    android:textSize="16sp"
+                    android:textColor="@color/coin_color"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/tv_boss_creation_date"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Created: Oct 15, 2025 14:30"
+                    android:textSize="14sp"
+                    android:textColor="@color/secondary_text"
+                    android:layout_marginBottom="8dp" />
+
+            </LinearLayout>
+
+            <!-- Action Buttons -->
+            <Button
+                android:id="@+id/btn_attack"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:text="Attack (5 left)"
+                android:textSize="18sp"
+                android:backgroundTint="@color/boss_fight_color"
+                android:textColor="@android:color/white"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/btn_back"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Back to Main"
+                android:textSize="16sp"
+                android:backgroundTint="@color/secondary_button_color"
+                android:textColor="@android:color/white" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Attack Flash Overlay -->
+    <View
+        android:id="@+id/v_attack_flash"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/white"
+        android:visibility="gone"
+        android:alpha="0" />
+
+    <!-- Victory Message -->
+    <TextView
+        android:id="@+id/tv_victory_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:text="VICTORY!"
+        android:textSize="48sp"
+        android:textStyle="bold"
+        android:textColor="@color/success_color"
+        android:visibility="gone"
+        android:elevation="20dp"
+        android:shadowColor="@android:color/black"
+        android:shadowDx="2"
+        android:shadowDy="2"
+        android:shadowRadius="4" />
+
+    <!-- Defeat Message -->
+    <TextView
+        android:id="@+id/tv_defeat_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:text="DEFEAT!"
+        android:textSize="48sp"
+        android:textStyle="bold"
+        android:textColor="@color/error_color"
+        android:visibility="gone"
+        android:elevation="20dp"
+        android:shadowColor="@android:color/black"
+        android:shadowDx="2"
+        android:shadowDy="2"
+        android:shadowRadius="4" />
+
+    <!-- Victory Chest Animation Container -->
+    <RelativeLayout
+        android:id="@+id/rl_chest_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:visibility="gone"
+        android:elevation="25dp">
+
+        <!-- Chest Image -->
+        <ImageView
+            android:id="@+id/iv_chest"
+            android:layout_width="200dp"
+            android:layout_height="150dp"
+            android:layout_centerInParent="true"
+            android:src="@drawable/ic_chest_closed"
+            android:contentDescription="Treasure Chest" />
+
+        <!-- Shake Instruction Text -->
+        <TextView
+            android:id="@+id/tv_shake_instruction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/iv_chest"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:text="🤳 Shake your device to open the chest!"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:gravity="center"
+            android:padding="16dp"
+            android:background="@drawable/form_background_light"
+            android:elevation="30dp" />
+
+        <!-- Rewards Container (shown after chest opens) -->
+        <LinearLayout
+            android:id="@+id/ll_rewards_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/iv_chest"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="30dp"
+            android:orientation="vertical"
+            android:background="@drawable/form_background_light"
+            android:padding="24dp"
+            android:visibility="gone"
+            android:elevation="30dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎉 VICTORY REWARDS! 🎉"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/success_color"
+                android:gravity="center"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Coin Reward -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="💰 Coins: "
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/coin_color" />
+
+                <TextView
+                    android:id="@+id/tv_coin_reward_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="200"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/coin_color" />
+
+            </LinearLayout>
+
+            <!-- Tap to continue instruction -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📱 Tap anywhere to continue"
+                android:textSize="14sp"
+                android:textColor="@color/secondary_text"
+                android:gravity="center"
+                android:alpha="0.8" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+</RelativeLayout>

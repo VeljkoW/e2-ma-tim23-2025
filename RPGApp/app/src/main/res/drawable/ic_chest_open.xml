@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="100dp"
+    android:viewportWidth="120"
+    android:viewportHeight="100">
+
+    <!-- Chest Base -->
+    <path
+        android:fillColor="#8B4513"
+        android:pathData="M15,45 L105,45 L105,80 Q105,85 100,85 L20,85 Q15,85 15,80 Z" />
+
+    <!-- Open Lid (rotated upward) -->
+    <path
+        android:fillColor="#A0522D"
+        android:pathData="M10,10 Q10,5 15,5 L105,5 Q110,5 110,10 L110,30 L10,30 Z" />
+
+    <!-- Gold Coins Inside (converted from circles) -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M39,60 C39,62.21 37.21,64 35,64 C32.79,64 31,62.21 31,60 C31,57.79 32.79,56 35,56 C37.21,56 39,57.79 39,60 Z" />
+
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M49,65 C49,67.21 47.21,69 45,69 C42.79,69 41,67.21 41,65 C41,62.79 42.79,61 45,61 C47.21,61 49,62.79 49,65 Z" />
+
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M59,62 C59,64.21 57.21,66 55,66 C52.79,66 51,64.21 51,62 C51,59.79 52.79,58 55,58 C57.21,58 59,59.79 59,62 Z" />
+
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M69,67 C69,69.21 67.21,71 65,71 C62.79,71 61,69.21 61,67 C61,64.79 62.79,63 65,63 C67.21,63 69,64.79 69,67 Z" />
+
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M79,63 C79,65.21 77.21,67 75,67 C72.79,67 71,65.21 71,63 C71,60.79 72.79,59 75,59 C77.21,59 79,60.79 79,63 Z" />
+
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M89,68 C89,70.21 87.21,72 85,72 C82.79,72 81,70.21 81,68 C81,65.79 82.79,64 85,64 C87.21,64 89,65.79 89,68 Z" />
+
+    <!-- Sparkles -->
+    <path
+        android:fillColor="#FFFF00"
+        android:pathData="M30,50 L32,52 L30,54 L28,52 Z" />
+
+    <path
+        android:fillColor="#FFFF00"
+        android:pathData="M80,52 L82,54 L80,56 L78,54 Z" />
+
+    <path
+        android:fillColor="#FFFF00"
+        android:pathData="M50,48 L52,50 L50,52 L48,50 Z" />
+
+    <!-- Chest Bands (converted from rect) -->
+    <path
+        android:fillColor="#654321"
+        android:pathData="M15,55 L105,55 L105,58 L15,58 Z" />
+
+    <path
+        android:fillColor="#654321"
+        android:pathData="M15,70 L105,70 L105,73 L15,73 Z" />
+
+    <!-- Corner Reinforcements (converted from circles) -->
+    <path
+        android:fillColor="#654321"
+        android:pathData="M23,55 C23,56.66 21.66,58 20,58 C18.34,58 17,56.66 17,55 C17,53.34 18.34,52 20,52 C21.66,52 23,53.34 23,55 Z" />
+
+    <path
+        android:fillColor="#654321"
+        android:pathData="M103,55 C103,56.66 101.66,58 100,58 C98.34,58 97,56.66 97,55 C97,53.34 98.34,52 100,52 C101.66,52 103,53.34 103,55 Z" />
+
+    <path
+        android:fillColor="#654321"
+        android:pathData="M23,80 C23,81.66 21.66,83 20,83 C18.34,83 17,81.66 17,80 C17,78.34 18.34,77 20,77 C21.66,77 23,78.34 23,80 Z" />
+
+    <path
+        android:fillColor="#654321"
+        android:pathData="M103,80 C103,81.66 101.66,83 100,83 C98.34,83 97,81.66 97,80 C97,78.34 98.34,77 100,77 C101.66,77 103,78.34 103,80 Z" />
+
+</vector>

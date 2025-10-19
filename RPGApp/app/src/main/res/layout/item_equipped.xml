@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:background="@drawable/form_background_light"
+    android:layout_marginBottom="4dp">
+
+    <!-- Equipment Icon -->
+    <ImageView
+        android:id="@+id/iv_item_icon"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@drawable/ic_equipment_default"
+        android:layout_gravity="center_vertical"
+        android:layout_marginEnd="12dp"
+        android:contentDescription="Equipment Icon" />
+
+    <!-- Equipment Info -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tv_item_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Power Gloves"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/primary_text" />
+
+        <TextView
+            android:id="@+id/tv_item_bonus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Power: +10"
+            android:textSize="12sp"
+            android:textColor="@color/success_color" />
+
+    </LinearLayout>
+
+    <!-- Equipment Status -->
+    <TextView
+        android:id="@+id/tv_item_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="✓"
+        android:textSize="16sp"
+        android:textColor="@color/success_color"
+        android:layout_gravity="center_vertical"
+        android:padding="4dp" />
+
+</LinearLayout>
