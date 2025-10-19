@@ -19,6 +19,7 @@ import com.example.rpgapp.model.Equipment;
 import com.example.rpgapp.model.User;
 import com.example.rpgapp.repository.EquipmentRepository;
 import com.example.rpgapp.service.EquipmentService;
+import com.example.rpgapp.service.AllianceBossService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -35,6 +36,7 @@ public class ShopActivity extends AppCompatActivity {
     private ImageButton btnBack;
 
     private EquipmentService equipmentService;
+    private AllianceBossService allianceBossService;
     private FirebaseAuth mAuth;
     private User currentUser;
 
@@ -48,6 +50,7 @@ public class ShopActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
         equipmentService = new EquipmentService(this);
+        allianceBossService = new AllianceBossService(this);
 
         initViews();
         loadUserData();
@@ -160,6 +163,8 @@ public class ShopActivity extends AppCompatActivity {
                                     @Override
                                     public void onSuccess(Equipment result) {
                                         Log.d(TAG, "onPotionPurchase: Purchase successful");
+                                        // Damage alliance boss through service
+                                        allianceBossService.damageAllianceBossFromShopPurchase(userId);
                                         runOnUiThread(() -> {
                                             Toast.makeText(ShopActivity.this, "Potion purchased!", Toast.LENGTH_SHORT).show();
                                             loadUserData(); // Refresh coins
@@ -200,6 +205,8 @@ public class ShopActivity extends AppCompatActivity {
                                     @Override
                                     public void onSuccess(Equipment result) {
                                         Log.d(TAG, "onClothingPurchase: Purchase successful");
+                                        // Damage alliance boss through service
+                                        allianceBossService.damageAllianceBossFromShopPurchase(userId);
                                         runOnUiThread(() -> {
                                             Toast.makeText(ShopActivity.this, "Clothing purchased!", Toast.LENGTH_SHORT).show();
                                             loadUserData(); // Refresh coins
@@ -222,7 +229,32 @@ public class ShopActivity extends AppCompatActivity {
                 .show();
     }
 
-    // Helper methods
+    // ShopItem helper class
+    public static class ShopItem {
+        public enum ItemType { POTION, CLOTHING }
+
+        private String id;
+        private String name;
+        private String description;
+        private int price;
+        private ItemType type;
+
+        public ShopItem(String id, String name, String description, int price, ItemType type) {
+            this.id = id;
+            this.name = name;
+            this.description = description;
+            this.price = price;
+            this.type = type;
+        }
+
+        public String getId() { return id; }
+        public String getName() { return name; }
+        public String getDescription() { return description; }
+        public int getPrice() { return price; }
+        public ItemType getType() { return type; }
+    }
+
+    // Helper methods for potions
     private int getPotionPercentage(Equipment.PotionType type) {
         switch (type) {
             case TEMP_POWER_20: return 50;
@@ -253,6 +285,7 @@ public class ShopActivity extends AppCompatActivity {
         }
     }
 
+    // Helper methods for clothing
     private int getClothingPercentage(Equipment.ClothingType type) {
         switch (type) {
             case GLOVES:
@@ -278,30 +311,5 @@ public class ShopActivity extends AppCompatActivity {
             case BOOTS: return "+40% chance for extra attack (2 battles)";
             default: return "";
         }
-    }
-
-    // ShopItem helper class
-    public static class ShopItem {
-        public enum ItemType { POTION, CLOTHING }
-
-        private String id;
-        private String name;
-        private String description;
-        private int price;
-        private ItemType type;
-
-        public ShopItem(String id, String name, String description, int price, ItemType type) {
-            this.id = id;
-            this.name = name;
-            this.description = description;
-            this.price = price;
-            this.type = type;
-        }
-
-        public String getId() { return id; }
-        public String getName() { return name; }
-        public String getDescription() { return description; }
-        public int getPrice() { return price; }
-        public ItemType getType() { return type; }
     }
 }

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -13,6 +14,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -20,8 +22,12 @@ import com.example.rpgapp.R;
 import com.example.rpgapp.adapter.AllianceMemberAdapter;
 import com.example.rpgapp.callback.AuthCallback;
 import com.example.rpgapp.model.Alliance;
+import com.example.rpgapp.model.AllianceBoss;
 import com.example.rpgapp.model.User;
+import com.example.rpgapp.repository.AllianceBossRepository;
 import com.example.rpgapp.repository.AllianceRepository;
+import com.example.rpgapp.service.AllianceBossService;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -37,10 +43,20 @@ public class AllianceActivity extends AppCompatActivity {
     private ScrollView allianceContainer;
     private LinearLayout emptyContainer;
 
+    // Alliance Boss UI components
+    private CardView cvBossStatus;
+    private MaterialButton btnCreateBoss;
+    private ImageView ivBossLogo;
+    private TextView tvBossName, tvDaysRemaining, tvHpText;
+    private View viewHpBar;
+
     private AllianceRepository allianceRepository;
+    private AllianceBossRepository allianceBossRepository;
+    private AllianceBossService bossService;
     private AllianceMemberAdapter memberAdapter;
     private String currentUserId;
     private Alliance currentAlliance;
+    private AllianceBoss currentAllianceBoss;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +64,8 @@ public class AllianceActivity extends AppCompatActivity {
         setContentView(R.layout.activity_alliance);
 
         allianceRepository = new AllianceRepository();
+        allianceBossRepository = new AllianceBossRepository();
+        bossService = new AllianceBossService(this);
         currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
         initViews();
@@ -69,6 +87,15 @@ public class AllianceActivity extends AppCompatActivity {
         allianceContainer = findViewById(R.id.allianceContainer);
         emptyContainer = findViewById(R.id.emptyContainer);
 
+        // Alliance Boss UI components
+        cvBossStatus = findViewById(R.id.cvBossStatus);
+        btnCreateBoss = findViewById(R.id.btnCreateBoss);
+        ivBossLogo = findViewById(R.id.ivBossLogo);
+        tvBossName = findViewById(R.id.tvBossName);
+        tvDaysRemaining = findViewById(R.id.tvDaysRemaining);
+        tvHpText = findViewById(R.id.tvHpText);
+        viewHpBar = findViewById(R.id.viewHpBar);
+
         btnBack.setOnClickListener(v -> finish());
 
         Button btnCreateAlliance = findViewById(R.id.btnCreateAlliance);
@@ -77,6 +104,7 @@ public class AllianceActivity extends AppCompatActivity {
         btnChat.setOnClickListener(v -> openChat());
         btnDeleteAlliance.setOnClickListener(v -> confirmDeleteAlliance());
         btnLeaveAlliance.setOnClickListener(v -> confirmLeaveAlliance());
+        btnCreateBoss.setOnClickListener(v -> showCreateBossDialog());
     }
 
     private void setupRecyclerView() {
@@ -130,6 +158,33 @@ public class AllianceActivity extends AppCompatActivity {
         boolean isLeader = alliance.getLeaderId().equals(currentUserId);
         btnDeleteAlliance.setVisibility(isLeader && !alliance.isMissionActive() ? View.VISIBLE : View.GONE);
         btnLeaveAlliance.setVisibility(!isLeader && !alliance.isMissionActive() ? View.VISIBLE : View.GONE);
+
+        // Load boss data
+        loadBossData(alliance.getId());
+    }
+
+    private void loadBossData(String allianceId) {
+        // Load alive alliance bosses for this alliance
+        allianceBossRepository.getAliveAllianceBossesByAllianceId(allianceId).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                if (!task.getResult().isEmpty()) {
+                    // Found alive boss(es), get the first one
+                    AllianceBoss boss = task.getResult().getDocuments().get(0).toObject(AllianceBoss.class);
+                    if (boss != null) {
+                        boss.setId(task.getResult().getDocuments().get(0).getId());
+                        currentAllianceBoss = boss;
+                    }
+                } else {
+                    // No alive boss found
+                    currentAllianceBoss = null;
+                }
+                updateBossDisplay();
+            } else {
+                // Error loading boss data, assume no boss exists
+                currentAllianceBoss = null;
+                updateBossDisplay();
+            }
+        });
     }
 
     private void showEmptyState() {
@@ -236,6 +291,108 @@ public class AllianceActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    private void showCreateBossDialog() {
+        if (currentAlliance == null) return;
+
+        // Check if user is alliance leader
+        boolean isLeader = currentAlliance.getLeaderId().equals(currentUserId);
+        if (!isLeader) {
+            Toast.makeText(this, "Only alliance leaders can create bosses", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Check if an alive alliance boss already exists
+        if (currentAllianceBoss != null && currentAllianceBoss.isAlive()) {
+            Toast.makeText(this, "Your alliance already has an active boss. Defeat it before creating a new one.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Show confirmation dialog without "reset" language
+        new AlertDialog.Builder(this)
+                .setTitle("Create Alliance Boss")
+                .setMessage("This will create a new alliance boss for your alliance. The boss will be active for 14 days. Are you sure?")
+                .setPositiveButton("Create", (dialog, which) -> createAllianceBoss())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void createAllianceBoss() {
+        if (currentAlliance == null) return;
+
+        showLoading(true);
+        bossService.createAllianceBossForUser(currentUserId).addOnCompleteListener(task -> {
+            showLoading(false);
+            if (task.isSuccessful()) {
+                AllianceBossService.CreateAllianceBossResult result = task.getResult();
+                if (result.isSuccess()) {
+                    Toast.makeText(AllianceActivity.this, result.getMessage(), Toast.LENGTH_SHORT).show();
+                    currentAllianceBoss = result.getAllianceBoss();
+                    updateBossDisplay();
+                } else {
+                    Toast.makeText(AllianceActivity.this, result.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Toast.makeText(AllianceActivity.this, "Failed to create alliance boss", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void updateBossDisplay() {
+        if (currentAlliance == null) return;
+
+        // Check if user is alliance leader
+        boolean isLeader = currentAlliance.getLeaderId().equals(currentUserId);
+
+        if (currentAllianceBoss != null && currentAllianceBoss.isAlive()) {
+            // Show boss status
+            cvBossStatus.setVisibility(View.VISIBLE);
+            btnCreateBoss.setVisibility(View.GONE);
+
+            displayBossStatus(currentAllianceBoss);
+        } else {
+            // Show create boss button
+            cvBossStatus.setVisibility(View.GONE);
+            btnCreateBoss.setVisibility(View.VISIBLE);
+            btnCreateBoss.setEnabled(isLeader);
+
+            if (!isLeader) {
+                btnCreateBoss.setText("Create Alliance Boss (Leader Only)");
+                btnCreateBoss.setAlpha(0.5f);
+            } else {
+                btnCreateBoss.setText("Create Alliance Boss");
+                btnCreateBoss.setAlpha(1.0f);
+            }
+        }
+    }
+
+    private void displayBossStatus(AllianceBoss boss) {
+        // Use a generic name since AllianceBoss doesn't have getName()
+        tvBossName.setText("Alliance Boss");
+
+        // Calculate days remaining manually (14 days from creation)
+        long creationTime = boss.getDateOfCreation().getTime();
+        long currentTime = System.currentTimeMillis();
+        long daysPassed = (currentTime - creationTime) / (1000 * 60 * 60 * 24);
+        long daysRemaining = 14 - daysPassed;
+
+        if (daysRemaining > 0) {
+            tvDaysRemaining.setText(daysRemaining + " days remaining");
+        } else {
+            tvDaysRemaining.setText("Expired");
+        }
+
+        // Update HP display using correct method names
+        tvHpText.setText(boss.getCurrentHp() + " / " + boss.getStartingHp());
+
+        // Update HP bar width using correct HP calculation
+        float hpPercentage = (float) boss.getCurrentHp() / boss.getStartingHp();
+        int maxWidth = getResources().getDisplayMetrics().widthPixels - 64; // Account for margins
+        int hpBarWidth = (int) (maxWidth * hpPercentage);
+
+        viewHpBar.getLayoutParams().width = hpBarWidth;
+        viewHpBar.requestLayout();
     }
 
     private void showLoading(boolean show) {

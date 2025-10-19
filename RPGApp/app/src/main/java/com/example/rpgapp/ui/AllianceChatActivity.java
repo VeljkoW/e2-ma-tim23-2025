@@ -136,12 +136,111 @@ public class AllianceChatActivity extends AppCompatActivity {
                     etMessage.setText("");
                     // Reload messages to get the real message with proper ID
                     loadMessages();
+
+                    // Damage alliance boss by 4 HP when message is successfully sent
+                    damageAllianceBossFromMessage();
                 } else {
                     Toast.makeText(AllianceChatActivity.this,
                             "Failed to send message", Toast.LENGTH_SHORT).show();
                 }
             }
         });
+    }
+
+    private void damageAllianceBossFromMessage() {
+        android.util.Log.d("AllianceChat", "Checking for alive alliance boss in alliance: " + allianceId);
+
+        // First check if any message was already sent today in this alliance
+        checkIfMessageSentToday(() -> {
+            // If no message sent today, proceed with boss damage
+            android.util.Log.d("AllianceChat", "No message sent today, proceeding with boss damage");
+
+            // Check if alliance has an alive boss and damage it by 4 HP
+            FirebaseFirestore.getInstance().collection("allianceBosses")
+                    .whereEqualTo("allianceId", allianceId)
+                    .whereEqualTo("status", "ALIVE")
+                    .get()
+                    .addOnSuccessListener(querySnapshot -> {
+                        android.util.Log.d("AllianceChat", "Query successful, found " + querySnapshot.size() + " alive bosses");
+
+                        if (!querySnapshot.isEmpty()) {
+                            // Found an alive boss - damage it by 4 HP
+                            com.google.firebase.firestore.DocumentSnapshot bossDoc = querySnapshot.getDocuments().get(0);
+                            String bossId = bossDoc.getId();
+                            Long currentHpLong = (Long) bossDoc.get("currentHp");
+                            int currentHp = currentHpLong != null ? currentHpLong.intValue() : 0;
+                            int newHp = Math.max(0, currentHp - 4);
+
+                            android.util.Log.d("AllianceChat", "Damaging boss " + bossId + " from " + currentHp + " to " + newHp + " HP");
+
+                            // Update boss HP
+                            FirebaseFirestore.getInstance().collection("allianceBosses")
+                                    .document(bossId)
+                                    .update("currentHp", newHp)
+                                    .addOnSuccessListener(aVoid -> {
+                                        android.util.Log.d("AllianceChat", "Alliance boss damaged by chat message: " + currentHp + " -> " + newHp + " (-4 HP)");
+                                        // Mark as dead if HP reaches 0
+                                        if (newHp <= 0) {
+                                            android.util.Log.d("AllianceChat", "Boss defeated! Marking as DEAD");
+                                            FirebaseFirestore.getInstance().collection("allianceBosses")
+                                                    .document(bossId)
+                                                    .update("status", "DEAD", "dateOfLastDyingOrFailing", new java.util.Date())
+                                                    .addOnSuccessListener(aVoid2 -> {
+                                                        android.util.Log.d("AllianceChat", "Boss successfully marked as DEAD");
+                                                    });
+                                        }
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        android.util.Log.e("AllianceChat", "Failed to damage alliance boss from chat", e);
+                                    });
+                        } else {
+                            android.util.Log.d("AllianceChat", "No alive alliance boss found for alliance " + allianceId);
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        android.util.Log.e("AllianceChat", "Failed to check for alliance boss", e);
+                    });
+        });
+    }
+
+    private void checkIfMessageSentToday(Runnable onNoneFoundToday) {
+        // Get start and end of today
+        java.util.Calendar startOfDay = java.util.Calendar.getInstance();
+        startOfDay.set(java.util.Calendar.HOUR_OF_DAY, 0);
+        startOfDay.set(java.util.Calendar.MINUTE, 0);
+        startOfDay.set(java.util.Calendar.SECOND, 0);
+        startOfDay.set(java.util.Calendar.MILLISECOND, 0);
+        long startOfDayMillis = startOfDay.getTimeInMillis();
+
+        java.util.Calendar endOfDay = java.util.Calendar.getInstance();
+        endOfDay.set(java.util.Calendar.HOUR_OF_DAY, 23);
+        endOfDay.set(java.util.Calendar.MINUTE, 59);
+        endOfDay.set(java.util.Calendar.SECOND, 59);
+        endOfDay.set(java.util.Calendar.MILLISECOND, 999);
+        long endOfDayMillis = endOfDay.getTimeInMillis();
+
+        android.util.Log.d("AllianceChat", "Checking for messages today between " + startOfDayMillis + " and " + endOfDayMillis);
+
+        // Query for any message sent today in this alliance
+        FirebaseFirestore.getInstance().collection("allianceMessages")
+                .whereEqualTo("allianceId", allianceId)
+                .whereGreaterThanOrEqualTo("timestamp", startOfDayMillis)
+                .whereLessThanOrEqualTo("timestamp", endOfDayMillis)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    int messageCount = querySnapshot.size();
+                    android.util.Log.d("AllianceChat", "Found " + messageCount + " messages sent today in alliance " + allianceId);
+
+                    if (messageCount <= 1) { // Current message is the first (or only) one today
+                        onNoneFoundToday.run();
+                    } else {
+                        android.util.Log.d("AllianceChat", "Message already sent today - no boss damage");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("AllianceChat", "Failed to check today's messages", e);
+                    // On error, don't damage boss to be safe
+                });
     }
 
     private void showLoading(boolean show) {

@@ -302,4 +302,9 @@ public class AllianceRepository {
                 .addOnSuccessListener(aVoid -> callback.onResult(true))
                 .addOnFailureListener(e -> callback.onResult(false));
     }
+
+    // Get all alliances
+    public Task<QuerySnapshot> getAllAlliances() {
+        return db.collection(ALLIANCES_COLLECTION).get();
+    }
 }

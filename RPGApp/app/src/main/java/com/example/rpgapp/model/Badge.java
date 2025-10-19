@@ -5,17 +5,25 @@ public class Badge {
     private String name;
     private String description;
     private String iconResource;
-    private boolean isUnlocked;
+    private String userId;
+    private String allianceBossId; // Optional field for alliance boss badges
 
-    public Badge() {}
+    public Badge() {
+        this.iconResource = "https://cdn-icons-png.flaticon.com/512/856/856940.png";
+    }
 
-    public Badge(String id, String name, String description, String iconResource)
-    {
+    public Badge(String id, String name, String description) {
         this.id = id;
         this.name = name;
         this.description = description;
-        this.iconResource = iconResource;
-        this.isUnlocked = false;
+        this.iconResource = "https://cdn-icons-png.flaticon.com/512/856/856940.png";
+    }
+
+    public Badge(String id, String name, String description, String iconResource) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.iconResource = iconResource != null ? iconResource : "https://cdn-icons-png.flaticon.com/512/856/856940.png";
     }
 
     // Getters and Setters
@@ -29,9 +37,13 @@ public class Badge {
     public void setDescription(String description) { this.description = description; }
 
     public String getIconResource() { return iconResource; }
-    public void setIconResource(String iconResource) { this.iconResource = iconResource; }
+    public void setIconResource(String iconResource) {
+        this.iconResource = iconResource != null ? iconResource : "https://cdn-icons-png.flaticon.com/512/856/856940.png";
+    }
 
-    public boolean isUnlocked() { return isUnlocked; }
-    public void setUnlocked(boolean unlocked) { isUnlocked = unlocked; }
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
+
+    public String getAllianceBossId() { return allianceBossId; }
+    public void setAllianceBossId(String allianceBossId) { this.allianceBossId = allianceBossId; }
 }
-

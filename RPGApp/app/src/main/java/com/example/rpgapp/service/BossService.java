@@ -18,6 +18,7 @@ public class BossService {
     private final BossRepository bossRepository;
     private final MissionRepository missionRepository;
     private final UserRepository userRepository;
+    private final AllianceBossService allianceBossService;
     private final Random random;
 
     public BossService(Context context) {
@@ -27,6 +28,7 @@ public class BossService {
             this.bossRepository = new BossRepository();
             this.missionRepository = new MissionRepository(context);
             this.userRepository = new UserRepository(context);
+            this.allianceBossService = new AllianceBossService(context);
             this.random = new Random();
 
             Log.d(TAG, "BossService successfully initialized");
@@ -79,6 +81,7 @@ public class BossService {
 
                         Boss boss = new Boss(userId, 1, 200, 200);
                         boss.setChanceTododge(dodgeChance);
+                        boss.setStartingChanceToDodge(dodgeChance); // Set the starting chance to dodge
 
                         return bossRepository.createBoss(boss).continueWith(createTask -> {
                             if (createTask.isSuccessful()) {
@@ -119,6 +122,7 @@ public class BossService {
 
                 Boss boss = new Boss(userId, newLevel, newHp, newCoins);
                 boss.setChanceTododge(dodgeChance);
+                boss.setStartingChanceToDodge(dodgeChance); // Set the starting chance to dodge
 
                 return bossRepository.createBoss(boss).continueWith(createTask -> {
                     if (createTask.isSuccessful()) {
@@ -306,6 +310,15 @@ public class BossService {
                     int newHp = Math.max(0, boss.getHp() - damageDealt);
                     boss.setHp(newHp);
                     Log.d(TAG, "Hit successful! Dealt " + damageDealt + " damage. Boss HP: " + boss.getHp() + " -> " + newHp);
+
+                    // If hit was successful on regular boss, also damage alliance boss by 2 HP
+                    try {
+                        allianceBossService.damageAllianceBossFromShopPurchase(userId);
+                        Log.d(TAG, "Alliance boss damage check completed for user: " + userId);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Failed to damage alliance boss for user " + userId + ": " + e.getMessage());
+                        // Don't fail the regular boss attack if alliance boss damage fails
+                    }
                 } else {
                     Log.d(TAG, "Boss dodged the attack! No damage dealt.");
                 }
@@ -382,6 +395,8 @@ public class BossService {
             if (dodgeTask.isSuccessful()) {
                 double newDodgeChance = dodgeTask.getResult();
                 boss.setChanceTododge(newDodgeChance);
+                // Note: We don't update startingChanceToDodge here because it should remain
+                // the original value from when the boss was first created
 
                 Log.d(TAG, "Boss reset for next fight: HP " + boss.getStartingHp() +
                       ", new dodge chance: " + newDodgeChance + ", attacks reset to 5");
